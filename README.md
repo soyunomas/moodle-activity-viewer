@@ -3,12 +3,12 @@
 Un visor interactivo, del lado del cliente, para los registros de actividad de Moodle. ¡Analiza fácilmente las exportaciones de logs CSV de Moodle directamente en tu navegador sin necesidad de configuración en el servidor! 🚀
 
 [![Licencia: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Desplegado-brightgreen)](https://soyunomas.github.io/moodle-activity-viewer/)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)](https://developer.mozilla.org/es/docs/Web/Guide/HTML/HTML5)
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)](https://developer.mozilla.org/es/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)](https://developer.mozilla.org/es/docs/Web/JavaScript)
 [![Bootstrap 5](https://img.shields.io/badge/Bootstrap-7952B3?style=flat&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 [![Chart.js](https://img.shields.io/badge/Chart.js-FF6384?style=flat&logo=chartdotjs&logoColor=white)](https://www.chartjs.org/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Desplegado-brightgreen)](https://soyunomas.github.io/moodle-activity-viewer/visor_actividad_moodle.html)
 
 Esta herramienta permite a educadores, administradores y usuarios de Moodle visualizar y filtrar rápidamente la actividad de los alumnos. Es completamente **autocontenida** en un único archivo HTML, lo que significa que no hay instalaciones complejas ni dependencias de servidor. ¡Simplemente ábrelo y úsalo! 🎉
 
@@ -38,23 +38,41 @@ Esta herramienta permite a educadores, administradores y usuarios de Moodle visu
 
 ## 📸 Capturas de Pantalla
 
-<table align="center">
-  <tr>
-    <td align="center"><strong>Panel Principal y Gráficos</strong></td>
-    <td align="center"><strong>Panel de Filtros y Tabla Detallada</strong></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="images/screenshot1.png" alt="Vista del Panel Principal" width="400"></td>
-    <td align="center"><img src="images/screenshot2.png" alt="Vista de Filtros y Tabla" width="400"></td>
-  </tr>
+<table align="center" style="width:100%; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th style="text-align:center; padding: 8px; border: 1px solid #ddd;">Panel de Filtros</th>
+      <th style="text-align:center; padding: 8px; border: 1px solid #ddd;">Gráficas Disponibles</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:center; padding: 8px; border: 1px solid #ddd;"><img src="images/screenshot.png" alt="Panel de Filtros" width="350"></td>
+      <td style="text-align:center; padding: 8px; border: 1px solid #ddd;"><img src="images/screenshot1.png" alt="Gráficas Disponibles en el Dashboard" width="350"></td>
+    </tr>
+    <tr>
+      <th style="text-align:center; padding: 8px; border: 1px solid #ddd;">Ejemplo Gráfica Ampliada 1</th>
+      <th style="text-align:center; padding: 8px; border: 1px solid #ddd;">Ejemplo Gráfica Ampliada 2</th>
+    </tr>
+    <tr>
+      <td style="text-align:center; padding: 8px; border: 1px solid #ddd;"><img src="images/screenshot2.png" alt="Ejemplo de una gráfica ampliada en modal" width="350"></td>
+      <td style="text-align:center; padding: 8px; border: 1px solid #ddd;"><img src="images/screenshot3.png" alt="Otro ejemplo de gráfica ampliada" width="350"></td>
+    </tr>
+    <tr>
+      <th style="text-align:center; padding: 8px; border: 1px solid #ddd;">Ejemplo Gráfica Ampliada 3</th>
+      <th style="text-align:center; padding: 8px; border: 1px solid #ddd;">Ejemplo Gráfica Ampliada 4</th>
+    </tr>
+    <tr>
+      <td style="text-align:center; padding: 8px; border: 1px solid #ddd;"><img src="images/screenshot4.png" alt="Tercer ejemplo de gráfica ampliada" width="350"></td>
+      <td style="text-align:center; padding: 8px; border: 1px solid #ddd;"><img src="images/screenshot5.png" alt="Cuarto ejemplo de gráfica ampliada" width="350"></td>
+    </tr>
+  </tbody>
 </table>
-*(Por favor, reemplaza estas con capturas reales llamadas `screenshot1.png` y `screenshot2.png` dentro de una carpeta `images` en tu repositorio.)*
 
 ## 🚀 Demo en Vivo en GitHub Pages
 
 Prueba el Visor de Actividad Moodle en vivo:
-[https://soyunomas.github.io/moodle-activity-viewer/](https://soyunomas.github.io/moodle-activity-viewer/)
-*(Este enlace asume que tu nombre de usuario de GitHub es `soyunomas` y el nombre del repositorio es `moodle-activity-viewer`)*
+[https://soyunomas.github.io/moodle-activity-viewer/visor_actividad_moodle.html](https://soyunomas.github.io/moodle-activity-viewer/visor_actividad_moodle.html)
 
 ## 📋 Cómo Exportar Logs de Moodle como CSV
 
