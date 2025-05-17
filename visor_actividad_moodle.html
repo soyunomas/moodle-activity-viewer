@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Actividad Moodle</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.23.0/esm/index.js" type="module"></script> 
+
+    <style>
+        body {
+            padding-top: 56px; 
+            background-color: #f8f9fa;
+        }
+        .chart-container-modal { 
+            position: relative;
+            margin: auto;
+            height: 85vh; 
+            width: 100%;
+        }
+        .chart-card .card-body canvas {
+            min-height: 220px; 
+            max-height: 250px;
+            width: 100%;
+        }
+        .chart-card {
+            cursor: pointer; 
+        }
+        .chart-card:hover {
+            border-color: #0d6efd; 
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        #resultsSection.hidden,
+        #loadingIndicator.hidden {
+            display: none;
+        }
+        .sticky-controls {
+            position: sticky;
+            top: 56px; 
+            background-color: #ffffff; /* Necesario para que el contenido detrás no se vea al hacer scroll */
+            z-index: 999; 
+            /* El padding y margin-bottom ahora están en el card dentro, o en el acordeón si se prefiere */
+            /* Eliminamos padding y margin-bottom de aquí para darlos al card del acordeón */
+        }
+        .sticky-controls .card { /* Aplicamos la sombra y borde al card del acordeón */
+             border-bottom: 1px solid #dee2e6;
+             box-shadow: 0 2px 4px rgba(0,0,0,.1);
+             margin-bottom: 1.5rem; /* Mantenemos el margen inferior para separar de los resultados */
+        }
+
+        .filters-scroll-area {
+            max-height: 20vh; 
+            overflow-y: auto; 
+            padding-right: 5px; 
+            margin-top: 0.5rem; 
+        }
+        .filter-group {
+            border-left: 3px solid #0d6efd;
+            padding-left: 0.75rem;
+        }
+        .table-responsive {
+            max-height: 500px; 
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .card-header h2, .card-header h3 { 
+            font-size: 0.95rem; 
+            font-weight: 600;
+        }
+        .navbar {
+            z-index: 1050; 
+        }
+        .navbar-nav .nav-link {
+            padding-right: .5rem;
+            padding-left: .5rem;
+        }
+        .modal-fullscreen .modal-body {
+            overflow-y: auto;
+        }
+        #dashboardGeneralStats p {
+            font-size: 0.8rem; 
+            margin-bottom: 0.3rem !important;
+        }
+        #dashboardGeneralStats .badge {
+            font-size: 0.75rem;
+        }
+        .stat-label {
+            color: #6c757d; 
+        }
+        /* Ajuste para que el botón del acordeón no tenga un fondo azul cuando está activo */
+        .accordion-button:not(.collapsed) {
+            color: #0c63e4; /* O el color que prefieras para el texto del botón expandido */
+            background-color: #e7f1ff; /* O el color de fondo que prefieras */
+        }
+        .accordion-button:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .25); /* Mantenemos el foco visible */
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Visor Moodle</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                     <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" title="Configuración">
+                            <i class="bi bi-gear-fill"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-md-4 pt-4">
+        <header class="text-center mb-4">
+            <h3 class="fw-light">Visor de Actividad Moodle</h3>
+        </header>
+
+        <div class="sticky-controls">
+            <div class="card">
+                <div class="accordion" id="analysisControlsAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="controlsAccordionHeader">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseControls" aria-expanded="true" aria-controls="collapseControls">
+                                Configuración de Análisis y Filtros
+                            </button>
+                        </h2>
+                        <div id="collapseControls" class="accordion-collapse collapse show" aria-labelledby="controlsAccordionHeader" data-bs-parent="#analysisControlsAccordion">
+                            <div class="accordion-body">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="csvFile" class="form-label fw-bold">1. Selecciona el archivo CSV:</label>
+                                        <input class="form-control" type="file" id="csvFile" accept=".csv">
+                                    </div>
+                                    
+                                    <div class="col-md-12 filter-group mb-3">
+                                        <p class="form-label fw-bold mb-1">2. Filtros de Análisis:</p>
+                                        <div class="filters-scroll-area">
+                                            <div class="row g-2">
+                                                <div class="col-md-3">
+                                                    <label for="startDate" class="form-label">Fecha de Inicio:</label>
+                                                    <input type="date" class="form-control form-control-sm" id="startDate">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="endDate" class="form-label">Fecha de Fin:</label>
+                                                    <input type="date" class="form-control form-control-sm" id="endDate">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="userFilter" class="form-label">Filtrar por Alumno:</label>
+                                                    <select id="userFilter" class="form-select form-select-sm">
+                                                        <option value="ALL_USERS">Todos los Alumnos</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="eventFilter" class="form-label">Filtrar por Nombre Evento:</label>
+                                                    <select id="eventFilter" class="form-select form-select-sm">
+                                                        <option value="ALL_EVENTS">Todos los Eventos</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mt-2">
+                                                <div class="col-md-4">
+                                                    <label for="componentFilter" class="form-label">Filtrar por Componente:</label>
+                                                    <select id="componentFilter" class="form-select form-select-sm">
+                                                        <option value="ALL_COMPONENTS">Todos los Componentes</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="contextFilter" class="form-label">Filtrar por Contexto del Evento:</label>
+                                                    <select id="contextFilter" class="form-select form-select-sm">
+                                                        <option value="ALL_CONTEXTS">Todos los Contextos</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-12 d-grid">
+                                        <button id="analyzeButton" class="btn btn-primary btn-lg">Analizar Logs</button>
+                                    </div>
+                                </div>
+                                <div id="statusMessage" class="mt-3 pt-2 border-top"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" class="text-center my-5 hidden">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Procesando datos...</p>
+        </div>
+        
+        <main id="resultsSection" class="hidden">
+            <div class="container-fluid px-0"> 
+                <div class="row mb-3 g-3">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header"><h3 class="h6 mb-0">Estadísticas Generales</h3></div>
+                            <div class="card-body" id="dashboardGeneralStats">
+                                <p><span class="stat-label">Rango Fechas:</span> <span id="dashDateRange" class="fw-bold">N/A</span></p>
+                                <p><span class="stat-label">Total Eventos:</span> <span id="dashTotalEvents" class="badge bg-primary">N/A</span></p>
+                                <p><span class="stat-label">Usuarios Únicos:</span> <span id="dashUniqueUsers" class="badge bg-info">N/A</span></p>
+                                <p><span class="stat-label">Días con Actividad:</span> <span id="dashActiveDays" class="badge bg-success">N/A</span></p>
+                                <p><span class="stat-label">Promedio Eventos/Día:</span> <span id="dashAvgEventsPerDay" class="badge bg-warning text-dark">N/A</span></p>
+                                <p><span class="stat-label">Evento Más Frecuente:</span> <span id="dashMostFrequentEventName" class="badge bg-secondary text-truncate d-block" style="max-width: 100%;">N/A</span></p>
+                                <p><span class="stat-label">Componente Más Accedido:</span> <span id="dashMostFrequentComponent" class="badge bg-secondary text-truncate d-block" style="max-width: 100%;">N/A</span></p>
+                                <p class="mb-0"><span class="stat-label">Usuario Más Activo:</span> <span id="dashMostActiveUser" class="badge bg-dark text-truncate d-block" style="max-width: 100%;">N/A</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card h-100 chart-card" data-modal-target="#userActivityModal" data-chart-type="userActivity">
+                            <div class="card-header"><h3 class="h6 mb-0">Actividad por Alumno (Top 15)</h3></div>
+                            <div class="card-body">
+                                <canvas id="dashUserActivityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card h-100 chart-card" data-modal-target="#eventsOverTimeModal" data-chart-type="eventsOverTime">
+                            <div class="card-header"><h3 class="h6 mb-0">Eventos por Día</h3></div>
+                            <div class="card-body">
+                                <canvas id="dashEventsOverTimeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card h-100 chart-card" data-modal-target="#componentActivityModal" data-chart-type="componentActivity">
+                            <div class="card-header"><h3 class="h6 mb-0">Actividad por Componente (Top 10)</h3></div>
+                            <div class="card-body">
+                                <canvas id="dashComponentActivityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3 g-3">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card h-100 chart-card" data-modal-target="#activityByHourModal" data-chart-type="activityByHour">
+                            <div class="card-header"><h3 class="h6 mb-0">Eventos por Hora del Día</h3></div>
+                            <div class="card-body">
+                                <canvas id="dashActivityByHourChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card h-100 chart-card" data-modal-target="#activityByDayOfWeekModal" data-chart-type="activityByDayOfWeek">
+                            <div class="card-header"><h3 class="h6 mb-0">Eventos por Día de Semana</h3></div>
+                            <div class="card-body">
+                                <canvas id="dashActivityByDayOfWeekChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card h-100 chart-card" data-modal-target="#componentBreakdownModal" data-chart-type="componentBreakdown">
+                            <div class="card-header"><h3 class="h6 mb-0">Desglose Eventos en Componentes</h3></div>
+                            <div class="card-body">
+                                <canvas id="dashComponentBreakdownChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="col-xl-3 col-md-6">
+                        <div class="card h-100 chart-card" data-modal-target="#activityByContextModal" data-chart-type="activityByContext">
+                            <div class="card-header"><h3 class="h6 mb-0">Actividad por Contexto (Top 10)</h3></div>
+                            <div class="card-body">
+                                <canvas id="dashActivityByContextChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section id="logTableSection" class="mt-4 card shadow-sm">
+                <div class="card-header">
+                     <h2 class="h5 mb-0">Detalle de Logs Filtrados</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Nombre completo del usuario</th>
+                                    <th>Contexto del evento</th>
+                                    <th>Componente</th>
+                                    <th>Nombre evento</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                     <p id="tableRowCount" class="mt-2 text-muted small"></p>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-5 text-muted">
+            <p>&copy; <span id="currentYear"></span> Visor de Actividad Moodle.</p>
+        </footer>
+    </div>
+
+    <!-- Modal de Configuración -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="settingsModalLabel">Configuración de Exclusiones</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="excludedUsernamesTextarea" class="form-label">Excluir Alumnos (subcadenas de nombres, separados por coma):</label>
+                        <textarea class="form-control" id="excludedUsernamesTextarea" rows="3" placeholder="Ej: Fernández, Jose, Admin User"></textarea>
+                        <div class="form-text">Cualquier alumno cuyo nombre completo contenga alguna de estas cadenas será excluido de los análisis y gráficos. La exclusión es insensible a mayúsculas/minúsculas.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="saveExclusionSettings">Guardar Cambios y Reanalizar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales para Gráficos Ampliados -->
+    <div class="modal fade" id="userActivityModal" tabindex="-1" aria-labelledby="userActivityModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userActivityModalLabel">Actividad por Alumno (Detallado)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="chart-container-modal">
+                        <canvas id="activityByUserChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="componentActivityModal" tabindex="-1" aria-labelledby="componentActivityModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="componentActivityModalLabel">Actividad por Componente (Detallado)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="chart-container-modal">
+                        <canvas id="activityByComponentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="eventsOverTimeModal" tabindex="-1" aria-labelledby="eventsOverTimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventsOverTimeModalLabel">Eventos por Día (Detallado)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="chart-container-modal">
+                        <canvas id="eventsOverTimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="activityByHourModal" tabindex="-1" aria-labelledby="activityByHourModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="activityByHourModalLabel">Eventos por Hora del Día (Detallado)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="chart-container-modal">
+                        <canvas id="activityByHourChartModal"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="activityByDayOfWeekModal" tabindex="-1" aria-labelledby="activityByDayOfWeekModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="activityByDayOfWeekModalLabel">Eventos por Día de la Semana (Detallado)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="chart-container-modal">
+                        <canvas id="activityByDayOfWeekChartModal"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="componentBreakdownModal" tabindex="-1" aria-labelledby="componentBreakdownModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="componentBreakdownModalLabel">Desglose de Eventos en Componentes Principales (Detallado)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="chart-container-modal">
+                        <canvas id="componentBreakdownChartModal"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="activityByContextModal" tabindex="-1" aria-labelledby="activityByContextModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="activityByContextModalLabel">Actividad por Contexto de Evento (Detallado)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="chart-container-modal">
+                        <canvas id="activityByContextChartModal"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script>
+        // --- GLOBAL VARIABLES ---
+        let parsedDataCache = []; 
+        let filteredDataForCharts = [];
+        let areFiltersPopulated = false;
+        let excludedUserSubstrings = []; 
+
+        // Chart instances for Dashboard
+        let dashUserActivityChartInstance = null;
+        let dashEventsOverTimeChartInstance = null;
+        let dashComponentActivityChartInstance = null;
+        let dashActivityByHourChartInstance = null;
+        let dashActivityByDayOfWeekChartInstance = null;
+        let dashComponentBreakdownChartInstance = null;
+        let dashActivityByContextChartInstance = null;
+        
+        let modalChartInstance = null; 
+
+        const CSV_COLUMN_MAPPING = {
+            TIME: "Hora",
+            FULL_NAME: "Nombre completo del usuario",
+            AFFECTED_USER: "Usuario afectado", 
+            EVENT_CONTEXT: "Contexto del evento",
+            COMPONENT: "Componente",
+            EVENT_NAME: "Nombre evento",
+            DESCRIPTION: "Descripción",
+            ORIGIN: "Origen",
+            IP_ADDRESS: "Dirección IP"
+        };
+        
+        // --- DOM Elements ---
+        const csvFileInput = document.getElementById('csvFile');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const userFilterSelect = document.getElementById('userFilter');
+        const eventFilterSelect = document.getElementById('eventFilter');
+        const componentFilterSelect = document.getElementById('componentFilter'); 
+        const contextFilterSelect = document.getElementById('contextFilter');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const excludedUsernamesTextarea = document.getElementById('excludedUsernamesTextarea');
+        const saveExclusionSettingsButton = document.getElementById('saveExclusionSettings');
+
+        const dashDateRangeEl = document.getElementById('dashDateRange');
+        const dashTotalEventsEl = document.getElementById('dashTotalEvents');
+        const dashUniqueUsersEl = document.getElementById('dashUniqueUsers');
+        const dashActiveDaysEl = document.getElementById('dashActiveDays');
+        const dashAvgEventsPerDayEl = document.getElementById('dashAvgEventsPerDay');
+        const dashMostFrequentEventNameEl = document.getElementById('dashMostFrequentEventName');
+        const dashMostFrequentComponentEl = document.getElementById('dashMostFrequentComponent');
+        const dashMostActiveUserEl = document.getElementById('dashMostActiveUser');
+        
+        const logTableBody = document.getElementById('logTableBody');
+        const tableRowCountEl = document.getElementById('tableRowCount');
+
+        Chart.defaults.font.family = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'";
+        Chart.defaults.plugins.legend.position = 'bottom';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setDefaultDates();
+            loadExclusionSettings(); 
+            
+            analyzeButton.addEventListener('click', handleAnalysisRequest);
+            csvFileInput.addEventListener('change', handleFileSelectionChange);
+            saveExclusionSettingsButton.addEventListener('click', handleSaveExclusionSettings);
+            
+            const reprocessAndDisplay = () => { if (parsedDataCache.length > 0) processAndDisplayData(parsedDataCache); };
+            startDateInput.addEventListener('change', reprocessAndDisplay);
+            endDateInput.addEventListener('change', reprocessAndDisplay);
+            userFilterSelect.addEventListener('change', reprocessAndDisplay);
+            eventFilterSelect.addEventListener('change', reprocessAndDisplay);
+            componentFilterSelect.addEventListener('change', reprocessAndDisplay); 
+            contextFilterSelect.addEventListener('change', reprocessAndDisplay);
+
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            document.addEventListener('click', function(event) {
+                const chartCard = event.target.closest('.chart-card');
+                if (chartCard) {
+                    const modalTargetId = chartCard.dataset.modalTarget;
+                    const chartType = chartCard.dataset.chartType;
+                    
+                    const modalElement = document.querySelector(modalTargetId);
+                    if (!modalElement) {
+                        console.error('Modal target not found:', modalTargetId);
+                        return;
+                    }
+
+                    const bootstrapModal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                    
+                    const canvasIdInModal = modalElement.querySelector('canvas').id;
+                    renderChartInModal(chartType, canvasIdInModal);
+                    
+                    bootstrapModal.show();
+                }
+            });
+        });
+
+        function setDefaultDates() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth(); // 0-indexed
+
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0); // Day 0 of next month is last day of current
+
+            startDateInput.valueAsDate = firstDayOfMonth;
+            endDateInput.valueAsDate = lastDayOfMonth;
+        }
+        
+        function handleFileSelectionChange(event) {
+            const file = event.target.files[0];
+            if (file) {
+                statusMessage.textContent = `Archivo seleccionado: ${file.name}. Listo para analizar.`;
+                statusMessage.className = 'mt-3 pt-2 border-top text-info';
+                parsedDataCache = []; 
+                filteredDataForCharts = [];
+                areFiltersPopulated = false; 
+                resetFilterSelects(); 
+                destroyAllDashboardCharts(); 
+                clearDashboardStats();
+                logTableBody.innerHTML = '';
+                tableRowCountEl.textContent = '';
+                resultsSection.classList.add('hidden'); 
+            } else {
+                statusMessage.textContent = 'Ningún archivo seleccionado.';
+                statusMessage.className = 'mt-3 pt-2 border-top text-muted';
+            }
+        }
+
+        function handleSaveExclusionSettings() {
+            const text = excludedUsernamesTextarea.value.trim();
+            excludedUserSubstrings = text ? text.split(',').map(s => s.trim().toLowerCase()).filter(s => s) : [];
+            
+            localStorage.setItem('moodleViewerExclusions', JSON.stringify(excludedUserSubstrings));
+
+            const settingsModalEl = document.getElementById('settingsModal');
+            const modalInstance = bootstrap.Modal.getInstance(settingsModalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+
+            if (parsedDataCache.length > 0) {
+                showUserMessage('Configuración de exclusión guardada. Reanalizando...', 'info');
+                areFiltersPopulated = false; 
+                processAndDisplayData(parsedDataCache);
+            } else {
+                showUserMessage('Configuración de exclusión guardada. Carga un archivo para ver los cambios.', 'info');
+            }
+        }
+
+        function loadExclusionSettings() {
+            const savedExclusions = localStorage.getItem('moodleViewerExclusions');
+            if (savedExclusions) {
+                excludedUserSubstrings = JSON.parse(savedExclusions);
+                excludedUsernamesTextarea.value = excludedUserSubstrings.join(', ');
+            }
+        }
+
+        function resetFilterSelects() {
+            userFilterSelect.innerHTML = '<option value="ALL_USERS">Todos los Alumnos</option>';
+            eventFilterSelect.innerHTML = '<option value="ALL_EVENTS">Todos los Eventos</option>';
+            componentFilterSelect.innerHTML = '<option value="ALL_COMPONENTS">Todos los Componentes</option>'; 
+            contextFilterSelect.innerHTML = '<option value="ALL_CONTEXTS">Todos los Contextos</option>';
+        }
+
+        function clearDashboardStats() {
+            dashDateRangeEl.textContent = 'N/A';
+            dashTotalEventsEl.textContent = 'N/A';
+            dashUniqueUsersEl.textContent = 'N/A';
+            dashActiveDaysEl.textContent = 'N/A';
+            dashAvgEventsPerDayEl.textContent = 'N/A';
+            dashMostFrequentEventNameEl.textContent = 'N/A';
+            dashMostFrequentComponentEl.textContent = 'N/A';
+            dashMostActiveUserEl.textContent = 'N/A';
+        }
+
+        function destroyAllDashboardCharts() {
+            if (dashUserActivityChartInstance) { dashUserActivityChartInstance.destroy(); dashUserActivityChartInstance = null; }
+            if (dashEventsOverTimeChartInstance) { dashEventsOverTimeChartInstance.destroy(); dashEventsOverTimeChartInstance = null; }
+            if (dashComponentActivityChartInstance) { dashComponentActivityChartInstance.destroy(); dashComponentActivityChartInstance = null; }
+            if (dashActivityByHourChartInstance) { dashActivityByHourChartInstance.destroy(); dashActivityByHourChartInstance = null; }
+            if (dashActivityByDayOfWeekChartInstance) { dashActivityByDayOfWeekChartInstance.destroy(); dashActivityByDayOfWeekChartInstance = null; }
+            if (dashComponentBreakdownChartInstance) { dashComponentBreakdownChartInstance.destroy(); dashComponentBreakdownChartInstance = null; }
+            if (dashActivityByContextChartInstance) { dashActivityByContextChartInstance.destroy(); dashActivityByContextChartInstance = null; }
+            
+            const canvasIds = [
+                'dashUserActivityChart', 'dashEventsOverTimeChart', 'dashComponentActivityChart',
+                'dashActivityByHourChart', 'dashActivityByDayOfWeekChart', 'dashComponentBreakdownChart', 'dashActivityByContextChart'
+            ];
+            canvasIds.forEach(id => {
+                const canvas = document.getElementById(id);
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            });
+        }
+
+        async function handleAnalysisRequest() {
+            const file = csvFileInput.files[0];
+            
+            if (parsedDataCache.length > 0 && file === undefined) { 
+                showLoading(true);
+                await new Promise(resolve => setTimeout(resolve, 50)); 
+                processAndDisplayData(parsedDataCache);
+                showLoading(false);
+                return;
+            }
+            
+            if (!file) {
+                showUserMessage("Por favor, selecciona un archivo CSV.", "danger");
+                resultsSection.classList.add('hidden');
+                return;
+            }
+            
+            showLoading(true);
+            showUserMessage('Leyendo y parseando archivo...', 'info');
+            resultsSection.classList.add('hidden'); 
+            
+            if(resultsSection.classList.contains('hidden')) {
+                destroyAllDashboardCharts();
+                clearDashboardStats();
+            }
+            
+            parsedDataCache = []; 
+            filteredDataForCharts = [];
+            areFiltersPopulated = false; 
+            resetFilterSelects();
+
+            try {
+                const csvText = await readFileAsText(file);
+                parsedDataCache = parseCSV(csvText);
+
+                if (!parsedDataCache || parsedDataCache.length === 0) {
+                    showUserMessage("No se pudieron procesar datos del CSV o el archivo está vacío.", "danger");
+                    csvFileInput.value = ""; 
+                    parsedDataCache = [];
+                    resultsSection.classList.add('hidden');
+                    return;
+                }
+                processAndDisplayData(parsedDataCache);
+                resultsSection.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error durante el análisis:", error);
+                showUserMessage(`Error al procesar el archivo: ${error.message}. Revisa la consola.`, "danger");
+                parsedDataCache = [];
+                csvFileInput.value = ""; 
+                resultsSection.classList.add('hidden');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function showLoading(isLoading) {
+            const controls = [csvFileInput, startDateInput, endDateInput, userFilterSelect, eventFilterSelect, componentFilterSelect, contextFilterSelect, analyzeButton];
+            if (isLoading) {
+                loadingIndicator.classList.remove('hidden');
+                controls.forEach(control => control.disabled = true);
+            } else {
+                loadingIndicator.classList.add('hidden');
+                controls.forEach(control => control.disabled = false);
+            }
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(event.target.result);
+                reader.onerror = error => reject(error);
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r?\n/);
+            if (lines.length < 2) return [];
+            const rawHeaderLine = lines[0].trim();
+            const headerNames = parseCSVLine(rawHeaderLine); 
+            const headerToStandardKeyMap = {};
+            for (const key in CSV_COLUMN_MAPPING) {
+                headerToStandardKeyMap[CSV_COLUMN_MAPPING[key]] = key;
+            }
+            const columnIndexToStandardKey = headerNames.map(name => headerToStandardKeyMap[name.trim()] || null);
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const lineContent = lines[i].trim();
+                if (lineContent === '') continue;
+                const values = parseCSVLine(lineContent);
+                if (values.length !== headerNames.length) {
+                    console.warn(`Discrepancia en número de columnas en línea ${i+1}. Esperado: ${headerNames.length}, Obtenido: ${values.length}. Línea: "${lines[i]}"`);
+                    continue; 
+                }
+                const rowObject = {};
+                let hasRequiredColumns = true;
+                columnIndexToStandardKey.forEach((standardKey, index) => {
+                    if (standardKey) rowObject[standardKey] = values[index];
+                });
+                if (!rowObject.TIME || !rowObject.FULL_NAME || !rowObject.COMPONENT || !rowObject.EVENT_NAME || !rowObject.EVENT_CONTEXT) {
+                    hasRequiredColumns = false;
+                }
+                if (hasRequiredColumns) data.push(rowObject);
+            }
+            return data;
+        }
+
+        function parseCSVLine(line) {
+            const values = [];
+            let inQuotes = false;
+            let currentValue = '';
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    if (inQuotes && i + 1 < line.length && line[i+1] === '"') {
+                        currentValue += '"'; i++; 
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    values.push(currentValue); currentValue = '';
+                } else {
+                    currentValue += char;
+                }
+            }
+            values.push(currentValue);
+            return values.map(v => v.trim()); 
+        }
+        
+        function parseMoodleDate(dateString) {
+            if (!dateString || typeof dateString !== 'string') return null;
+            const parts = dateString.split(',');
+            if (parts.length !== 2) return null;
+            const datePart = parts[0].trim(); 
+            const timePart = parts[1].trim(); 
+            const dateSegments = datePart.split('/');
+            if (dateSegments.length !== 3) return null;
+            let day = parseInt(dateSegments[0], 10);
+            let month = parseInt(dateSegments[1], 10) - 1; 
+            let yearSuffix = parseInt(dateSegments[2], 10);
+            let year = (yearSuffix < 70) ? 2000 + yearSuffix : 1900 + yearSuffix;
+            const timeSegments = timePart.split(':');
+            if (timeSegments.length !== 3) return null;
+            let hours = parseInt(timeSegments[0], 10);
+            let minutes = parseInt(timeSegments[1], 10);
+            let seconds = parseInt(timeSegments[2], 10);
+            if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hours) || isNaN(minutes) || isNaN(seconds) ||
+                month < 0 || month > 11 || day < 1 || day > 31 || 
+                hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
+                return null;
+            }
+            const parsed = new Date(year, month, day, hours, minutes, seconds);
+             if (isNaN(parsed.getTime())) return null;
+            return parsed;
+        }
+
+        function populateFilterSelects(dataToGetOptionsFrom) { 
+            const uniqueUserNames = [...new Set(dataToGetOptionsFrom.map(row => row.FULL_NAME || "Usuario Desconocido"))].sort();
+            const uniqueEventNames = [...new Set(dataToGetOptionsFrom.map(row => row.EVENT_NAME || "Evento Desconocido"))].sort();
+            const uniqueComponents = [...new Set(dataToGetOptionsFrom.map(row => row.COMPONENT || "Componente Desconocido"))].sort();
+            const uniqueContexts = [...new Set(dataToGetOptionsFrom.map(row => row.EVENT_CONTEXT || "Contexto Desconocido"))].sort();
+
+            const selectedUser = userFilterSelect.value;
+            const selectedEvent = eventFilterSelect.value;
+            const selectedComponent = componentFilterSelect.value; 
+            const selectedContext = contextFilterSelect.value;
+
+            userFilterSelect.innerHTML = '<option value="ALL_USERS">Todos los Alumnos</option>';
+            uniqueUserNames.forEach(name => {
+                const option = document.createElement('option'); option.value = name; option.textContent = name;
+                userFilterSelect.appendChild(option);
+            });
+            if (userFilterSelect.querySelector(`option[value="${selectedUser}"]`)) userFilterSelect.value = selectedUser;
+            else userFilterSelect.value = "ALL_USERS";
+
+            eventFilterSelect.innerHTML = '<option value="ALL_EVENTS">Todos los Eventos</option>';
+            uniqueEventNames.forEach(name => {
+                const option = document.createElement('option'); option.value = name; option.textContent = name;
+                eventFilterSelect.appendChild(option);
+            });
+            if (eventFilterSelect.querySelector(`option[value="${selectedEvent}"]`)) eventFilterSelect.value = selectedEvent;
+            else eventFilterSelect.value = "ALL_EVENTS";
+            
+            componentFilterSelect.innerHTML = '<option value="ALL_COMPONENTS">Todos los Componentes</option>';
+            uniqueComponents.forEach(name => {
+                const option = document.createElement('option'); option.value = name; option.textContent = name;
+                componentFilterSelect.appendChild(option);
+            });
+            if (componentFilterSelect.querySelector(`option[value="${selectedComponent}"]`)) componentFilterSelect.value = selectedComponent;
+            else componentFilterSelect.value = "ALL_COMPONENTS";
+
+
+            contextFilterSelect.innerHTML = '<option value="ALL_CONTEXTS">Todos los Contextos</option>';
+            uniqueContexts.forEach(name => {
+                const option = document.createElement('option'); option.value = name; option.textContent = name;
+                contextFilterSelect.appendChild(option);
+            });
+            if (contextFilterSelect.querySelector(`option[value="${selectedContext}"]`)) contextFilterSelect.value = selectedContext;
+            else contextFilterSelect.value = "ALL_CONTEXTS";
+
+            areFiltersPopulated = true;
+        }
+
+        function processAndDisplayData(sourceData) { 
+            if (!sourceData || sourceData.length === 0) {
+                showUserMessage("No hay datos cargados para analizar.", "warning");
+                resultsSection.classList.add('hidden');
+                destroyAllDashboardCharts();
+                clearDashboardStats();
+                return;
+            }
+            
+            let dataToProcess = [...sourceData]; 
+
+            if (excludedUserSubstrings.length > 0) {
+                dataToProcess = dataToProcess.filter(row => {
+                    const userNameLower = (row.FULL_NAME || "").toLowerCase();
+                    return !excludedUserSubstrings.some(substring => userNameLower.includes(substring));
+                });
+            }
+
+            if (!areFiltersPopulated) { 
+                populateFilterSelects(dataToProcess); 
+            }
+
+            const startDateVal = startDateInput.valueAsDate;
+            const endDateVal = endDateInput.valueAsDate;
+            const selectedUser = userFilterSelect.value;
+            const selectedEvent = eventFilterSelect.value;
+            const selectedComponent = componentFilterSelect.value; 
+            const selectedContext = contextFilterSelect.value;
+
+            if (!startDateVal || !endDateVal) {
+                showUserMessage("Fechas de inicio o fin inválidas.", "danger");
+                resultsSection.classList.add('hidden');
+                return;
+            }
+            
+            const startDateObj = new Date(startDateVal.valueOf()); startDateObj.setHours(0,0,0,0);
+            const endDateObj = new Date(endDateVal.valueOf()); endDateObj.setHours(23, 59, 59, 999); 
+
+            if (startDateObj > endDateObj) {
+                showUserMessage("La fecha de inicio no puede ser posterior a la fecha de fin.", "danger");
+                resultsSection.classList.add('hidden');
+                return;
+            }
+
+            filteredDataForCharts = dataToProcess.filter(row => {
+                const eventDate = parseMoodleDate(row.TIME);
+                if (!eventDate) return false;
+                return eventDate >= startDateObj && eventDate <= endDateObj;
+            });
+            
+            if (selectedUser !== "ALL_USERS") filteredDataForCharts = filteredDataForCharts.filter(row => (row.FULL_NAME || "Usuario Desconocido") === selectedUser);
+            if (selectedEvent !== "ALL_EVENTS") filteredDataForCharts = filteredDataForCharts.filter(row => (row.EVENT_NAME || "Evento Desconocido") === selectedEvent);
+            if (selectedComponent !== "ALL_COMPONENTS") filteredDataForCharts = filteredDataForCharts.filter(row => (row.COMPONENT || "Componente Desconocido") === selectedComponent); 
+            if (selectedContext !== "ALL_CONTEXTS") filteredDataForCharts = filteredDataForCharts.filter(row => (row.EVENT_CONTEXT || "Contexto Desconocido") === selectedContext);
+
+            if (filteredDataForCharts.length === 0) {
+                showUserMessage("No hay eventos que coincidan con los filtros y exclusiones aplicadas.", "warning");
+                clearDashboardStats(); 
+                dashDateRangeEl.textContent = `${startDateVal.toLocaleDateString()} - ${endDateVal.toLocaleDateString()}`;
+                destroyAllDashboardCharts(); 
+                renderAllDashboardCharts(); 
+                logTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No hay datos para mostrar.</td></tr>';
+                tableRowCountEl.textContent = `Mostrando 0 filas.`;
+                resultsSection.classList.remove('hidden'); 
+                return;
+            }
+
+            const totalEvents = filteredDataForCharts.length;
+            const userActivity = {};
+            const uniqueEventDates = new Set();
+            filteredDataForCharts.forEach(row => { 
+                userActivity[row.FULL_NAME || "Usuario Desconocido"] = (userActivity[row.FULL_NAME || "Usuario Desconocido"] || 0) + 1;
+                const eventDate = parseMoodleDate(row.TIME);
+                if (eventDate) {
+                    uniqueEventDates.add(eventDate.toISOString().split('T')[0]);
+                }
+            });
+            const uniqueUsers = Object.keys(userActivity).length;
+            const activeDaysCount = uniqueEventDates.size;
+            const avgEventsPerDay = activeDaysCount > 0 ? (totalEvents / activeDaysCount).toFixed(2) : "0.00";
+            
+            const componentActivity = {};
+            filteredDataForCharts.forEach(row => { componentActivity[row.COMPONENT || "Componente Desconocido"] = (componentActivity[row.COMPONENT || "Componente Desconocido"] || 0) + 1; });
+            const eventNameActivity = {};
+            filteredDataForCharts.forEach(row => { eventNameActivity[row.EVENT_NAME || "Nombre Evento Desconocido"] = (eventNameActivity[row.EVENT_NAME || "Nombre Evento Desconocido"] || 0) + 1; });
+            
+            const mostActiveUserData = Object.keys(userActivity).length > 0 ? Object.entries(userActivity).reduce((max, current) => current[1] > max[1] ? current : max, ["N/A", 0]) : ["N/A", 0];
+
+            dashDateRangeEl.textContent = `${startDateVal.toLocaleDateString()} - ${endDateVal.toLocaleDateString()}`;
+            dashTotalEventsEl.textContent = totalEvents;
+            dashUniqueUsersEl.textContent = uniqueUsers;
+            dashActiveDaysEl.textContent = activeDaysCount;
+            dashAvgEventsPerDayEl.textContent = avgEventsPerDay;
+            dashMostFrequentEventNameEl.textContent = getMostFrequent(eventNameActivity) || "N/A";
+            dashMostFrequentComponentEl.textContent = getMostFrequent(componentActivity) || "N/A";
+            dashMostActiveUserEl.textContent = mostActiveUserData[1] > 0 ? `${mostActiveUserData[0]} (${mostActiveUserData[1]} eventos)`: "N/A";
+
+            renderAllDashboardCharts();
+            renderLogTable(filteredDataForCharts);
+
+            resultsSection.classList.remove('hidden');
+            showUserMessage(`Análisis completado. Mostrando ${filteredDataForCharts.length} eventos.`, "success");
+        }
+
+        function getMostFrequent(activityObject) {
+            if (Object.keys(activityObject).length === 0) return null;
+            return Object.entries(activityObject).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+        }
+        
+        function calculateUserActivityData(data, topN = 15) {
+            const activity = {};
+            data.forEach(row => { activity[row.FULL_NAME || "Usuario Desconocido"] = (activity[row.FULL_NAME || "Usuario Desconocido"] || 0) + 1; });
+            const sorted = Object.entries(activity).sort(([,a],[,b]) => b-a).slice(0, topN);
+            return { labels: sorted.map(e => e[0]), dataValues: sorted.map(e => e[1]) };
+        }
+
+        function calculateComponentActivityData(data, topN = 10) {
+            const activity = {};
+            data.forEach(row => { activity[row.COMPONENT || "Componente Desconocido"] = (activity[row.COMPONENT || "Componente Desconocido"] || 0) + 1; });
+            const sorted = Object.entries(activity).sort(([,a],[,b]) => b-a).slice(0, topN);
+            return { labels: sorted.map(e => e[0]), dataValues: sorted.map(e => e[1]) };
+        }
+
+        function calculateEventsOverTimeData(data, filterStartDate, filterEndDate) {
+            const eventsByDay = {};
+            let currentDate = new Date(filterStartDate.valueOf());
+            const endDateLoop = new Date(filterEndDate.valueOf());
+
+            while(currentDate <= endDateLoop) {
+                const dayKey = currentDate.toISOString().split('T')[0];
+                eventsByDay[dayKey] = 0;
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            data.forEach(row => {
+                const eventDate = parseMoodleDate(row.TIME);
+                if (eventDate && eventDate >= filterStartDate && eventDate <= filterEndDate) {
+                    const dayKey = eventDate.toISOString().split('T')[0];
+                    if(eventsByDay.hasOwnProperty(dayKey)){
+                       eventsByDay[dayKey]++;
+                    }
+                }
+            });
+            const sortedDays = Object.keys(eventsByDay).sort((a, b) => new Date(a) - new Date(b));
+            return { labels: sortedDays, dataValues: sortedDays.map(day => eventsByDay[day]) };
+        }
+
+        function calculateActivityByHourData(data) {
+            const hours = Array(24).fill(0);
+            data.forEach(row => {
+                const eventDate = parseMoodleDate(row.TIME);
+                if (eventDate) hours[eventDate.getHours()]++;
+            });
+            return { 
+                labels: hours.map((_, i) => `${String(i).padStart(2, '0')}:00`), 
+                dataValues: hours 
+            };
+        }
+
+        function calculateActivityByDayOfWeekData(data) {
+            const days = Array(7).fill(0); 
+            const dayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+            data.forEach(row => {
+                const eventDate = parseMoodleDate(row.TIME);
+                if (eventDate) {
+                    const dayOfWeek = eventDate.getDay(); // Domingo: 0, Lunes: 1, ..., Sábado: 6
+                    const adjustedIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; 
+                    days[adjustedIndex]++;
+                }
+            });
+            return { labels: dayNames, dataValues: days };
+        }
+        
+        function calculateActivityByContextData(dataForCounts, topN = 10, useFullContextBase = false, baseDataForContextList = []) {
+            const activity = {};
+            let allPossibleContexts = [];
+
+            if (useFullContextBase) {
+                let sourceForContextList = [...baseDataForContextList]; 
+
+                const selectedComponentValue = componentFilterSelect.value;
+                if (selectedComponentValue !== "ALL_COMPONENTS") {
+                    sourceForContextList = sourceForContextList.filter(row => (row.COMPONENT || "Componente Desconocido") === selectedComponentValue);
+                }
+
+                const startDateVal = startDateInput.valueAsDate;
+                const endDateVal = endDateInput.valueAsDate;
+                if (startDateVal && endDateVal) { 
+                    const startDateObj = new Date(startDateVal.valueOf()); startDateObj.setHours(0,0,0,0);
+                    const endDateObj = new Date(endDateVal.valueOf()); endDateObj.setHours(23,59,59,999);
+                    sourceForContextList = sourceForContextList.filter(row => {
+                        const eventDate = parseMoodleDate(row.TIME);
+                        return eventDate && eventDate >= startDateObj && eventDate <= endDateObj;
+                    });
+                }
+
+                allPossibleContexts = [...new Set(sourceForContextList.map(row => row.EVENT_CONTEXT || "Contexto Desconocido"))].sort();
+                allPossibleContexts.forEach(ctx => activity[ctx] = 0); 
+            }
+            
+            dataForCounts.forEach(row => { 
+                const contextName = row.EVENT_CONTEXT || "Contexto Desconocido";
+                if (useFullContextBase) {
+                    if (activity.hasOwnProperty(contextName)) {
+                        activity[contextName]++;
+                    }
+                } else {
+                    activity[contextName] = (activity[contextName] || 0) + 1;
+                }
+            });
+
+            let sorted;
+            if (useFullContextBase) {
+                sorted = allPossibleContexts.map(ctxName => [ctxName, activity[ctxName] || 0]);
+            } else {
+                 sorted = Object.entries(activity).sort(([,a],[,b]) => b-a);
+                 if (topN > 0 && topN < sorted.length) sorted = sorted.slice(0, topN);
+            }
+            return { labels: sorted.map(e => e[0]), dataValues: sorted.map(e => e[1]) };
+        }
+
+
+        function calculateComponentBreakdownData(data, topNComponents = 3, topNEventsPerComponent = 3) {
+            const componentActivity = {};
+            data.forEach(row => {
+                const component = row.COMPONENT || "Componente Desconocido";
+                componentActivity[component] = (componentActivity[component] || 0) + 1;
+            });
+        
+            const sortedComponents = Object.entries(componentActivity)
+                .sort(([,a],[,b]) => b-a)
+                .slice(0, topNComponents)
+                .map(entry => entry[0]);
+        
+            const eventBreakdown = {}; 
+            const allEventNames = new Set();
+        
+            sortedComponents.forEach(comp => {
+                eventBreakdown[comp] = {};
+                const componentEvents = data.filter(row => (row.COMPONENT || "Componente Desconocido") === comp);
+                const eventCountsInComponent = {};
+                componentEvents.forEach(row => {
+                    const eventName = row.EVENT_NAME || "Evento Desconocido";
+                    eventCountsInComponent[eventName] = (eventCountsInComponent[eventName] || 0) + 1;
+                });
+        
+                Object.entries(eventCountsInComponent)
+                    .sort(([,a],[,b]) => b-a)
+                    .slice(0, topNEventsPerComponent)
+                    .forEach(([eventName, count]) => {
+                        eventBreakdown[comp][eventName] = count;
+                        allEventNames.add(eventName);
+                    });
+            });
+            
+            const uniqueEventNamesArray = Array.from(allEventNames).sort();
+            const datasets = uniqueEventNamesArray.map(eventName => {
+                return {
+                    label: eventName,
+                    data: sortedComponents.map(comp => eventBreakdown[comp]?.[eventName] || 0),
+                };
+            });
+        
+            return { labels: sortedComponents, datasets: datasets };
+        }
+
+        const CHART_COLORS = [
+            'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)',
+            'rgba(199, 199, 199, 0.7)', 'rgba(83, 102, 255, 0.7)', 'rgba(40, 159, 64, 0.7)'
+        ];
+        function getChartColors(count) {
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                colors.push(CHART_COLORS[i % CHART_COLORS.length]);
+            }
+            return colors;
+        }
+
+        function renderAllDashboardCharts() {
+            renderDashUserActivityChart();
+            renderDashEventsOverTimeChart();
+            renderDashComponentActivityChart();
+            renderDashActivityByHourChart();
+            renderDashActivityByDayOfWeekChart();
+            renderDashComponentBreakdownChart();
+            renderDashActivityByContextChart();
+        }
+
+        function renderGenericChart(canvasId, existingChartInstance, chartConfig, noDataMessage = "No hay datos para mostrar.") {
+            if (existingChartInstance) {
+                existingChartInstance.destroy();
+            }
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) { console.error(`Canvas con ID ${canvasId} no encontrado.`); return null; }
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+
+            const hasLabels = chartConfig.data.labels && chartConfig.data.labels.length > 0;
+            const hasDataInDatasets = chartConfig.data.datasets && chartConfig.data.datasets.some(ds => ds.data.length > 0);
+            const allDatasetValuesAreZero = chartConfig.data.datasets && chartConfig.data.datasets.every(ds => ds.data.every(val => val === 0));
+
+            let shouldShowNoDataMessage = true;
+            if (hasLabels && (hasDataInDatasets || (canvasId.toLowerCase().includes('context') && allDatasetValuesAreZero))) {
+                 shouldShowNoDataMessage = false;
+            }
+            if (chartConfig.type === 'doughnut' && (!hasDataInDatasets || allDatasetValuesAreZero )) {
+                 shouldShowNoDataMessage = true;
+            }
+
+
+            if (shouldShowNoDataMessage) {
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = "14px " + Chart.defaults.font.family;
+                ctx.fillStyle = "#6c757d"; 
+                ctx.fillText(noDataMessage, canvas.width / 2, canvas.height / 2);
+                ctx.restore();
+                return null; 
+            }
+            
+            return new Chart(ctx, chartConfig);
+        }
+
+
+        function renderDashUserActivityChart() {
+            const topNDashboard = 15;
+            const { labels, dataValues } = calculateUserActivityData(filteredDataForCharts, topNDashboard);
+            const chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `Top ${topNDashboard} Alumnos`, data: dataValues,
+                        backgroundColor: getChartColors(labels.length),
+                        borderColor: getChartColors(labels.length).map(c => c.replace('0.7', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { autoSkip: false, font: {size: 9} } }, x: { ticks: { font: {size: 9} } } } }
+            };
+            dashUserActivityChartInstance = renderGenericChart('dashUserActivityChart', dashUserActivityChartInstance, chartConfig);
+        }
+
+        function renderDashEventsOverTimeChart() {
+            const sDate = startDateInput.valueAsDate ? new Date(startDateInput.valueAsDate.valueOf()) : new Date();
+            const eDate = endDateInput.valueAsDate ? new Date(endDateInput.valueAsDate.valueOf()) : new Date();
+            sDate.setHours(0,0,0,0);
+            eDate.setHours(23,59,59,999);
+
+            const { labels, dataValues } = calculateEventsOverTimeData(filteredDataForCharts, sDate, eDate);
+            const chartConfig = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Eventos por Día', data: dataValues,
+                        borderColor: 'rgb(75, 192, 192)', tension: 0.1, fill: false, borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd/MM/yyyy', displayFormats: {day: 'dd/MM'}}, ticks:{font:{size:9}}}, y: {beginAtZero: true, ticks:{font:{size:9}}} }, plugins: { legend: { display: false } } }
+            };
+            dashEventsOverTimeChartInstance = renderGenericChart('dashEventsOverTimeChart', dashEventsOverTimeChartInstance, chartConfig);
+        }
+        
+        function renderDashComponentActivityChart() {
+            const topNDashboard = 10;
+            const { labels, dataValues } = calculateComponentActivityData(filteredDataForCharts, topNDashboard);
+            const chartConfig = {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Componentes', data: dataValues,
+                        backgroundColor: getChartColors(labels.length),
+                        borderColor: getChartColors(labels.length).map(c => c.replace('0.7', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: labels.length > 0 && labels.length <= 6, labels:{font:{size:9}} } } }
+            };
+             dashComponentActivityChartInstance = renderGenericChart('dashComponentActivityChart', dashComponentActivityChartInstance, chartConfig);
+        }
+        
+        function renderDashActivityByHourChart() {
+            const { labels, dataValues } = calculateActivityByHourData(filteredDataForCharts);
+            const chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Eventos por Hora', data: dataValues,
+                        backgroundColor: CHART_COLORS[1], borderColor: CHART_COLORS[1].replace('0.7', '1'), borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: {x: {ticks: {autoSkip: true, maxTicksLimit:12, font:{size:9}}}, y:{ticks:{font:{size:9}}}} }
+            };
+            dashActivityByHourChartInstance = renderGenericChart('dashActivityByHourChart', dashActivityByHourChartInstance, chartConfig);
+        }
+
+        function renderDashActivityByDayOfWeekChart() {
+            const { labels, dataValues } = calculateActivityByDayOfWeekData(filteredDataForCharts);
+            const chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Eventos por Día Semana', data: dataValues,
+                        backgroundColor: CHART_COLORS[3], borderColor: CHART_COLORS[3].replace('0.7', '1'), borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales:{x:{ticks:{font:{size:9}}}, y:{ticks:{font:{size:9}}}} }
+            };
+            dashActivityByDayOfWeekChartInstance = renderGenericChart('dashActivityByDayOfWeekChart', dashActivityByDayOfWeekChartInstance, chartConfig);
+        }
+
+        function renderDashComponentBreakdownChart() {
+            const topNCompDash = 3, topNEventsDash = 3;
+            const { labels, datasets } = calculateComponentBreakdownData(filteredDataForCharts, topNCompDash, topNEventsDash);
+            
+            datasets.forEach((ds, index) => {
+                ds.backgroundColor = CHART_COLORS[index % CHART_COLORS.length];
+                ds.borderColor = CHART_COLORS[index % CHART_COLORS.length].replace('0.7','1');
+                ds.borderWidth = 1;
+            });
+
+            const chartConfig = {
+                type: 'bar',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: datasets.length > 0 && datasets.length <= 5, labels:{font:{size:9}} } }, 
+                    scales: { x: { stacked: false, ticks:{font:{size:9}} }, y: { stacked: false, beginAtZero: true, ticks:{font:{size:9}} } } 
+                }
+            };
+             dashComponentBreakdownChartInstance = renderGenericChart('dashComponentBreakdownChart', dashComponentBreakdownChartInstance, chartConfig, "Pocos datos para desglose");
+        }
+        
+        function renderDashActivityByContextChart() {
+            const topNDashboard = 10;
+            const { labels, dataValues } = calculateActivityByContextData(filteredDataForCharts, topNDashboard, false); 
+            const chartConfig = {
+                type: 'bar', 
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `Top ${topNDashboard} Contextos`, data: dataValues,
+                        backgroundColor: getChartColors(labels.length),
+                        borderColor: getChartColors(labels.length).map(c => c.replace('0.7', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { autoSkip: false, font:{size:9} } }, x:{ticks:{font:{size:9}}} } }
+            };
+            dashActivityByContextChartInstance = renderGenericChart('dashActivityByContextChart', dashActivityByContextChartInstance, chartConfig);
+        }
+
+        function renderChartInModal(type, canvasIdForModal) {
+            if (modalChartInstance) {
+                modalChartInstance.destroy();
+                modalChartInstance = null;
+            }
+            
+            const canvas = document.getElementById(canvasIdForModal);
+            if (!canvas) { console.error("Canvas para modal no encontrado:", canvasIdForModal); return; }
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+
+            let chartConfigType, chartOptions = { responsive: true, maintainAspectRatio: false };
+            let datasets = [];
+            let labels = [];
+
+            const topNModalDefault = 50; 
+            const topNCompModal = 5, topNEventsModal = 7; 
+
+            if (filteredDataForCharts.length === 0 && type !== 'activityByContext') {
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = "16px " + Chart.defaults.font.family;
+                ctx.fillStyle = "#6c757d";
+                ctx.fillText("No hay datos filtrados para mostrar en detalle.", canvas.width / 2, canvas.height / 2);
+                ctx.restore();
+                return;
+            }
+            
+            let titleForChart = "";
+            const sDateModal = startDateInput.valueAsDate ? new Date(startDateInput.valueAsDate.valueOf()) : new Date();
+            const eDateModal = endDateInput.valueAsDate ? new Date(endDateInput.valueAsDate.valueOf()) : new Date();
+            sDateModal.setHours(0,0,0,0);
+            eDateModal.setHours(23,59,59,999);
+
+            switch (type) {
+                case 'userActivity':
+                    const uActivity = calculateUserActivityData(filteredDataForCharts, topNModalDefault);
+                    labels = uActivity.labels;
+                    datasets = [{ label: 'Eventos por Alumno', data: uActivity.dataValues, backgroundColor: CHART_COLORS[0] }];
+                    chartConfigType = 'bar';
+                    chartOptions.indexAxis = 'y';
+                    chartOptions.scales = { y: { ticks: { autoSkip: false } } };
+                    titleForChart = 'Actividad por Alumno (Top ' + labels.length + ')';
+                    break;
+                case 'eventsOverTime':
+                    const eTime = calculateEventsOverTimeData(filteredDataForCharts, sDateModal, eDateModal);
+                    labels = eTime.labels;
+                    datasets = [{ label: 'Eventos por Día', data: eTime.dataValues, borderColor: CHART_COLORS[1], fill: false, tension: 0.1, borderWidth: 2 }];
+                    chartConfigType = 'line';
+                    chartOptions.scales = { x: { type: 'time', time: { unit: 'day', tooltipFormat: 'PPPp', displayFormats: { day: 'dd/MM/yy' }}}, y: {beginAtZero: true} };
+                    titleForChart = 'Eventos por Día';
+                    break;
+                case 'componentActivity':
+                    const cActivity = calculateComponentActivityData(filteredDataForCharts, topNModalDefault);
+                    labels = cActivity.labels;
+                    datasets = [{ label: 'Eventos por Componente', data: cActivity.dataValues, backgroundColor: getChartColors(labels.length) }];
+                    chartConfigType = 'doughnut';
+                    titleForChart = 'Actividad por Componente (Top ' + labels.length + ')';
+                    break;
+                case 'activityByHour':
+                    const byHour = calculateActivityByHourData(filteredDataForCharts);
+                    labels = byHour.labels;
+                    datasets = [{ label: 'Eventos por Hora', data: byHour.dataValues, backgroundColor: CHART_COLORS[2] }];
+                    chartConfigType = 'bar';
+                    titleForChart = 'Eventos por Hora del Día';
+                    break;
+                case 'activityByDayOfWeek':
+                    const byDay = calculateActivityByDayOfWeekData(filteredDataForCharts);
+                    labels = byDay.labels;
+                    datasets = [{ label: 'Eventos por Día de Semana', data: byDay.dataValues, backgroundColor: CHART_COLORS[3] }];
+                    chartConfigType = 'bar';
+                    titleForChart = 'Eventos por Día de la Semana';
+                    break;
+                case 'componentBreakdown':
+                    const breakdown = calculateComponentBreakdownData(filteredDataForCharts, topNCompModal, topNEventsModal);
+                    labels = breakdown.labels;
+                    datasets = breakdown.datasets;
+                    datasets.forEach((ds, index) => { ds.backgroundColor = CHART_COLORS[index % CHART_COLORS.length]; });
+                    chartConfigType = 'bar';
+                    chartOptions.scales = { x: { stacked: false }, y: { stacked: false, beginAtZero: true } };
+                    titleForChart = `Desglose de Eventos (Top ${topNEventsModal}) en Componentes Principales (Top ${topNCompModal})`;
+                    break;
+                case 'activityByContext':
+                    let baseContextsSource = [...parsedDataCache]; 
+                    if (excludedUserSubstrings.length > 0) { 
+                        baseContextsSource = baseContextsSource.filter(row => {
+                            const userNameLower = (row.FULL_NAME || "").toLowerCase();
+                            return !excludedUserSubstrings.some(substring => userNameLower.includes(substring));
+                        });
+                    }
+                    const byContext = calculateActivityByContextData(filteredDataForCharts, 0, true, baseContextsSource); 
+                                        
+                    labels = byContext.labels;
+                    datasets = [{ label: 'Eventos por Contexto', data: byContext.dataValues, backgroundColor: getChartColors(labels.length) }];
+                    chartConfigType = 'bar';
+                    chartOptions.indexAxis = 'y';
+                    chartOptions.scales = { y: { ticks: { autoSkip: false } } };
+                    titleForChart = 'Actividad por Contexto (Todos los contextos relevantes a filtros actuales)';
+
+                    if (labels.length === 0) { 
+                         ctx.save();
+                         ctx.textAlign = 'center';
+                         ctx.textBaseline = 'middle';
+                         ctx.font = "16px " + Chart.defaults.font.family;
+                         ctx.fillStyle = "#6c757d";
+                         ctx.fillText("No hay contextos para mostrar con los filtros y datos actuales.", canvas.width / 2, canvas.height / 2);
+                         ctx.restore();
+                        return;
+                    }
+                    break;
+                default:
+                    console.error("Tipo de gráfico desconocido para modal:", type);
+                    return;
+            }
+
+            chartOptions.plugins = {
+                title: { display: true, text: titleForChart, font: { size: 16 } },
+                legend: { display: chartConfigType === 'doughnut' || (datasets.length > 1 && datasets.length <= 10) } 
+            };
+            
+            let hasLabels = labels && labels.length > 0;
+            let hasDataInDatasets = datasets && datasets.some(ds => ds.data && ds.data.length > 0);
+            let allDataValuesAreZeroInDatasets = datasets && datasets.every(ds => ds.data && ds.data.every(val => val === 0));
+
+            let shouldRenderChart = false;
+
+            if (type === 'activityByContext') {
+                shouldRenderChart = hasLabels;
+            } else if (chartConfigType === 'doughnut' || chartConfigType === 'pie') {
+                shouldRenderChart = hasLabels && hasDataInDatasets && !allDataValuesAreZeroInDatasets;
+            } else { 
+                shouldRenderChart = hasLabels && hasDataInDatasets;
+            }
+            
+            if (shouldRenderChart) { 
+                 modalChartInstance = new Chart(ctx, {
+                    type: chartConfigType,
+                    data: { labels: labels, datasets: datasets },
+                    options: chartOptions
+                });
+            } else { 
+                 ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = "16px " + Chart.defaults.font.family;
+                ctx.fillStyle = "#6c757d";
+                if (!(type === 'activityByContext' && labels.length === 0)) {
+                     ctx.fillText("No hay datos para este gráfico con los filtros actuales.", canvas.width / 2, canvas.height / 2);
+                }
+                ctx.restore();
+            }
+        }
+
+        function renderLogTable(data) {
+            logTableBody.innerHTML = ''; 
+            tableRowCountEl.textContent = '';
+
+            if (data.length === 0) {
+                logTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No hay datos para mostrar.</td></tr>';
+                tableRowCountEl.textContent = `Mostrando 0 filas.`;
+                return;
+            }
+            
+            const fragment = document.createDocumentFragment();
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.TIME || ''}</td>
+                    <td>${row.FULL_NAME || ''}</td>
+                    <td>${row.EVENT_CONTEXT || ''}</td>
+                    <td>${row.COMPONENT || ''}</td>
+                    <td>${row.EVENT_NAME || ''}</td>
+                    <td>${row.DESCRIPTION || ''}</td>
+                `;
+                fragment.appendChild(tr);
+            });
+            logTableBody.appendChild(fragment);
+            tableRowCountEl.textContent = `Mostrando ${data.length} fila(s).`;
+        }
+
+        function showUserMessage(message, type = 'info') { 
+            statusMessage.textContent = message;
+            statusMessage.className = `mt-3 pt-2 border-top text-${type}`;
+        }
+
+    </script>
+</body>
+</html>
