@@ -12,29 +12,58 @@ Un visor interactivo, del lado del cliente, para los registros de actividad de M
 
 Esta herramienta permite a educadores, administradores y usuarios de Moodle visualizar y filtrar rápidamente la actividad de los alumnos. Es completamente **autocontenida** en un único archivo HTML, lo que significa que no hay instalaciones complejas ni dependencias de servidor. ¡Simplemente ábrelo y úsalo! 🎉
 
+# Visor de Actividad Moodle Avanzado
+
+Herramienta de análisis de logs de Moodle del lado del cliente, diseñada para ofrecer visualizaciones interactivas y detalladas sobre la actividad en la plataforma. Carga tus archivos CSV y explora los datos sin necesidad de subirlos a un servidor.
+
 ## ✨ Características Principales
 
-*   **📁 Carga Directa de CSV:** Procesa archivos CSV de logs de Moodle directamente desde tu ordenador.
-*   **📈 Paneles Interactivos (Dashboards):** Un conjunto de gráficos para visualizar datos:
-    *   Actividad por Alumno (Top N)
-    *   Eventos a lo Largo del Tiempo
-    *   Actividad por Componente (Top N)
-    *   Actividad por Hora del Día
-    *   Actividad por Día de la Semana
-    *   Desglose de Eventos en Componentes Principales
-    *   Actividad por Contexto del Evento (Top N)
-*   **🔍 Filtrado Potente:**
+*   **📁 Carga Directa de CSV:** Procesa archivos CSV de logs de Moodle estándar directamente desde tu ordenador.
+*   **📊 Paneles de Visualización (Dashboards):** Un conjunto completo de gráficos para analizar la actividad desde múltiples perspectivas:
+    *   **Resumen General:**
+        *   Estadísticas Clave (Total Eventos, Usuarios Únicos, Días Activos, Promedios, etc.).
+    *   **Análisis de Actividad Principal:**
+        *   Actividad por Alumno (Top N en panel, todos en modal).
+        *   Eventos a lo Largo del Tiempo (por Día).
+        *   Actividad por Componente Moodle (Top N en panel, todos en modal).
+        *   Actividad por Contexto del Evento (Top N en panel, todos en modal).
+    *   **Patrones Temporales:**
+        *   Eventos por Hora del Día.
+        *   Eventos por Día de la Semana.
+    *   **Análisis Detallado de Componentes:**
+        *   Desglose de Eventos Específicos dentro de los Componentes Principales.
+    *   **Gráficos de Dispersión (Scatter Plots):**
+        *   Usuarios Únicos vs. Eventos Totales (por Día).
+        *   Componentes Únicos Accedidos vs. Eventos Totales (por Alumno).
+        *   Eventos de Visualización vs. Eventos de Participación (por Alumno).
+    *   **Gráficos de Burbujas (Bubble Charts) para Análisis Multidimensional:**
+        *   Análisis de Alumnos: Días Activos (eje X) vs. Promedio Eventos/Día (eje Y) vs. Total Eventos (tamaño burbuja).
+        *   Análisis de Componentes: Usuarios Únicos (eje X) vs. Total Eventos (eje Y) vs. Promedio Eventos/Usuario (tamaño burbuja).
+        *   Análisis de Contextos: Alumnos Activos (eje X) vs. Promedio Eventos/Alumno (eje Y) vs. Total Eventos (tamaño burbuja).
+    *   **Análisis Basado en IP (si la columna está disponible en el CSV):**
+        *   Top IPs por Número de Eventos.
+        *   Top IPs por Número de Alumnos Únicos.
+        *   Top Alumnos por Número de IPs Únicas.
+
+*   **🔍 Filtrado Potente y Flexible:**
     *   📅 **Rango de Fechas:** Enfócate en periodos específicos.
+    *   🕒 **Rango de Horas:** Precisa el análisis a franjas horarias específicas del día.
     *   👤 **Usuario:** Analiza la actividad de todos los usuarios o de un solo alumno.
-    *   🏷️ **Nombre del Evento:** Aísla acciones particulares de Moodle (ej: "Módulo del curso visto", "Usuario matriculado en el curso").
-    *   🧩 **Componente:** Profundiza en áreas específicas de Moodle (ej: Foro, Cuestionario, Tarea, Sistema).
-    *   🌍 **Contexto del Evento:** Filtra por el curso, actividad o área del sistema específica donde ocurrió el evento.
-*   **🚫 Exclusión de Usuarios:** Excluye fácilmente nombres de usuario específicos (ej: cuentas de prueba, administradores) del análisis para obtener datos más limpios.
-*   **🖱️ Gráficos Clicables:** Amplía los gráficos del panel principal a una vista modal a pantalla completa para una inspección detallada.
-*   **📄 Tabla Detallada de Logs:** Visualiza y desplázate por las entradas de log filtradas en crudo.
-*   **🚀 Completamente del Lado del Cliente:** Todo el procesamiento ocurre en tu navegador, asegurando la privacidad de los datos y sin carga para el servidor.
-*   **📱 Diseño Responsivo:** Se adapta a ordenadores de escritorio, tabletas y dispositivos móviles.
-*   **⚙️ Persistencia de Configuración:** Los ajustes de exclusión de usuarios se guardan localmente en tu navegador.
+    *   🏷️ **Nombre del Evento:** Aísla acciones particulares (ej: "Módulo del curso visto").
+    *   🧩 **Componente:** Profundiza en áreas específicas de Moodle (ej: Foro, Tarea).
+    *   🌍 **Contexto del Evento:** Filtra por el curso, actividad o recurso específico.
+    *   🌐 **Dirección IP:** Filtra eventos originados desde IPs específicas (si la columna existe en el CSV).
+    *   📊 **Opción "Incluir ítems con 0 actividad":** Controla si los rankings (alumnos, componentes, etc.) muestran entidades del dataset base aunque no tengan actividad según los filtros actuales.
+
+*   **🛠️ Configuración Personalizada:**
+    *   🚫 **Exclusiones Globales Avanzadas:** Define subcadenas (insensibles a mayúsculas/minúsculas, separadas por coma) para excluir automáticamente del análisis:
+        *   Nombres de Alumnos (ej: "admin", "test user").
+        *   Nombres de Componentes (ej: "Sistema", "Bloque X").
+        *   Nombres de Evento (ej: "course viewed", "user loggedin").
+        *   Contextos de Evento (ej: "Curso de Pruebas", "Actividad Ejemplo").
+    *   🎨 **Patrones de Eventos para Gráfico "Visualización vs. Participación":**
+        *   Define subcadenas para identificar eventos de "Visualización" (ej: "viewed", "consultado").
+        *   Define subcadenas para identificar eventos de "Participación" (ej: "submitted", "posted").
 
 ## 📸 Capturas de Pantalla
 
