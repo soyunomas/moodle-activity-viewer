@@ -159,6 +159,34 @@ Si tu exportación de Moodle usa nombres diferentes, necesitarás actualizar el 
     *   Introduce subcadenas de nombres de usuario separadas por comas para excluir (ej: "usuario de prueba, admin, soporte").
     *   Haz clic en "Guardar Cambios y Reanalizar". Las exclusiones se guardan en el almacenamiento local de tu navegador.
 
+## 💡 Manejo de Archivos de Log Grandes: Pre-filtrado para Mejor Rendimiento
+
+Si trabajas con archivos de logs de Moodle que son muy extensos (por ejemplo, de varios meses o con muchos usuarios), su procesamiento completo en el navegador puede consumir bastantes recursos y ralentizar la aplicación. Para optimizar el rendimiento en análisis posteriores sobre subconjuntos específicos de estos datos, puedes utilizar la propia herramienta para generar versiones más pequeñas y manejables de tus logs.
+
+Sigue estos pasos:
+
+1.  **Carga Inicial del Log Grande:**
+    *   Selecciona tu archivo CSV de log completo usando el selector "1. Selecciona el archivo CSV:".
+    *   *Nota: La carga y el primer análisis de un archivo extremadamente grande pueden tomar tiempo, ya que todo el procesamiento se realiza en tu navegador.*
+
+2.  **Aplica Filtros Estratégicos:**
+    *   Define filtros que reduzcan significativamente el volumen de datos, pero que aún contengan la información que deseas analizar repetidamente. Por ejemplo:
+        *   Un **rango de fechas** más acotado (ej. el último mes, un trimestre específico).
+        *   Excluir **alumnos** o **componentes** que no son relevantes para tu análisis recurrente (puedes usar los filtros directos o las exclusiones globales en la configuración ⚙️).
+        *   Filtrar por un **contexto de evento** específico si te enfocas siempre en un curso particular.
+    *   Haz clic en el botón **"Analizar Logs"** para aplicar estos filtros.
+
+3.  **Descarga el Log Filtrado:**
+    *   Una vez que los resultados del análisis se muestren, dirígete a la sección **"Detalle de Logs Filtrados"** al final de la página.
+    *   Haz clic en el botón **<i class="bi bi-download"></i> Descargar CSV**.
+    *   Se descargará un nuevo archivo CSV (ej: `moodle_logs_filtrados_AAAAMMDD_HHMMSS.csv`) que contiene **únicamente** las entradas de log que cumplen con los criterios de filtrado que aplicaste.
+
+4.  **Reutiliza el Log Filtrado:**
+    *   ¡Este nuevo archivo CSV es tu log optimizado! En futuras sesiones de análisis, en lugar de cargar el archivo original grande, puedes **seleccionar directamente este archivo CSV filtrado y más pequeño**.
+    *   La aplicación lo procesará mucho más rápido, permitiéndote trabajar de manera más fluida con el subconjunto de datos relevante.
+
+Este proceso te permite crear "vistas" más pequeñas y enfocadas de tus logs extensos, sin modificar tu archivo de log original, y aprovechando la capacidad de filtrado de esta herramienta para mejorar tu flujo de trabajo.
+
 ## 🛠️ Construido Con
 
 *   **HTML5:** Marcado semántico.
