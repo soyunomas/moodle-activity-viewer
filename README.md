@@ -139,7 +139,7 @@ Si tu exportación de Moodle usa nombres diferentes, necesitarás actualizar el 
 
 ## 💻 Cómo Usar el Visor
 
-1.  **Abre `index.html`:**
+1.  **Abre `visor_actividad_moodle.html`:**
     *   Descarga el repositorio y abre `index.html` directamente en tu navegador web.
     *   O visita la [Demo en Vivo](#-demo-en-vivo-en-github-pages).
 2.  **Selecciona el Archivo CSV:**
@@ -172,7 +172,7 @@ Si tu exportación de Moodle usa nombres diferentes, necesitarás actualizar el 
 
 *   [ ] **Exportar Informe Completo:** Opción para descargar la vista actual del panel (quizás como PDF o una colección de imágenes y resúmenes de datos). 📥
 *   [ ] **Selección Avanzada de Columnas:** Permitir a los usuarios mapear columnas CSV si su exportación tiene encabezados diferentes, directamente desde la UI.
-*   [ ] **Filtrado de Tiempo Más Granular:** Añadir filtros por hora del día (ej: mostrar actividad solo entre las 9 AM y las 5 PM). ⏱️
+*   [x] **Filtrado de Tiempo Más Granular:** Añadir filtros por hora del día (ej: mostrar actividad solo entre las 9 AM y las 5 PM). ⏱️
 *   [ ] **Guardar/Cargar Configuraciones de Filtro:** Permitir a los usuarios guardar un conjunto completo de filtros aplicados (fechas, usuario, evento, etc.) y recargarlos más tarde.
 *   [ ] **Accesibilidad Mejorada (A11Y):** Revisar y mejorar aún más los atributos ARIA y la navegación por teclado para todos los componentes. ♿
 *   [ ] **Temas/Personalización:** Opciones básicas para que los usuarios cambien los colores de los gráficos o un tema claro/oscuro para el visor. 🎨
