@@ -7,6 +7,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
+    <!-- Papa Parse para CSV grandes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
     <script src="help_content.js"></script> 
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
@@ -115,7 +118,6 @@
             line-height: 1;
         }
         
-        /* Estilos para ordenación de tabla */
         #logTableSection th[data-sort-key] {
             cursor: pointer;
             position: relative; 
@@ -139,6 +141,22 @@
             border-top-color: #333;
             transform: translateY(-1px); 
         }
+        .pagination .page-link {
+            font-size: 0.875rem; /* pagination-sm specific link size if needed */
+        }
+        .pagination .page-item.disabled .page-link {
+            color: #6c757d;
+            pointer-events: none;
+            background-color: #fff;
+            border-color: #dee2e6;
+        }
+        .pagination .page-item.active .page-link {
+            z-index: 3;
+            color: #fff;
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
 
         @media (max-width: 767.98px) {
             .filters-scroll-area .form-label {
@@ -149,6 +167,17 @@
             }
             .card-header h3 {
                 font-size: 0.8rem; 
+            }
+            #logTableSection .d-flex.justify-content-between {
+                flex-direction: column;
+                align-items: flex-start !important; /* Override justify-content-between */
+            }
+            #logTableSection .pagination {
+                margin-top: 0.5rem;
+                justify-content: flex-start !important; /* Align pagination to start on small screens */
+            }
+            #tableRowCount {
+                 width: 100%; /* Make sure row count takes full width before pagination */
             }
         }
     </style>
@@ -189,7 +218,9 @@
                                         <label for="csvFile" class="form-label fw-bold">1. Selecciona el archivo CSV:</label>
                                         <input class="form-control" type="file" id="csvFile" accept=".csv">
                                     </div>
-                                    
+                                    <div class="col-md-12 d-grid mb-3">
+                                        <button id="analyzeButton" class="btn btn-primary btn-lg">Analizar Logs</button>
+                                    </div>                                    
                                     <div class="col-md-12 filter-group mb-3">
                                         <p class="form-label fw-bold mb-1">2. Filtros de Análisis:</p>
                                         <div class="form-check form-switch mb-2">
@@ -248,10 +279,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div class="col-md-12 d-grid">
-                                        <button id="analyzeButton" class="btn btn-primary btn-lg">Analizar Logs</button>
                                     </div>
                                 </div>
                                 <div id="statusMessage" class="mt-3 pt-2 border-top"></div>
@@ -585,7 +612,14 @@
                             </tbody>
                         </table>
                     </div>
-                     <p id="tableRowCount" class="mt-2 text-muted small"></p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <p id="tableRowCount" class="text-muted small mb-0"></p>
+                        <nav aria-label="Navegación de logs">
+                            <ul class="pagination pagination-sm justify-content-end mb-0" id="logTablePagination">
+                                <!-- Los ítems de paginación se generarán aquí -->
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
             </section>
         </main>
@@ -1107,9 +1141,11 @@
         
         let modalChartInstance = null; 
 
-        // Variables para control de fechas min/max del log y ordenación de tabla
         let minDateFromLog = null;
         let maxDateFromLog = null;
+
+        let currentPage = 1;      
+        const ITEMS_PER_PAGE = 50; 
         let sortColumn = null;      
         let sortDirection = 'asc'; 
 
@@ -1176,7 +1212,7 @@
         Chart.defaults.scale.title.font = { size: 12, weight: '500' };
         Chart.defaults.scale.title.display = true;
 
-        // El objeto helpContent AHORA SE CARGA DESDE help_content.js
+        // El objeto helpContent SE CARGA DESDE help_content.js
 
 
         function generateDynamicFilename(baseName, type = 'data') {
@@ -1288,9 +1324,7 @@
                     event.stopPropagation(); 
                     
                     const chartHelpType = helpButton.dataset.chartHelpType;
-                    // helpContent ahora es global porque se carga desde help_content.js
                     const contentData = (typeof helpContent !== 'undefined' && helpContent[chartHelpType]) ? helpContent[chartHelpType] : null;
-
 
                     if (contentData) {
                         helpModalTitleEl.textContent = contentData.title;
@@ -1349,10 +1383,14 @@
                 downloadLogsCsvButton.addEventListener('click', handleDownloadLogsCsv);
             }
 
-            // Listener para ordenación de tabla
             const logTableThead = document.getElementById('logTableSection')?.querySelector('thead');
             if (logTableThead) {
                 logTableThead.addEventListener('click', handleSortTable);
+            }
+            
+            const logTablePagination = document.getElementById('logTablePagination');
+            if (logTablePagination) {
+                logTablePagination.addEventListener('click', handlePaginationClick);
             }
 
 
@@ -1391,15 +1429,17 @@
                 allQuizAttempts = [];
                 areFiltersPopulated = false; 
                 ipColumnAvailable = false;
-                minDateFromLog = null; // Resetear para que setDefaultDates funcione correctamente si se quita el archivo
+                minDateFromLog = null; 
                 maxDateFromLog = null;
-                sortColumn = null; // Resetear ordenación
+                currentPage = 1;
+                sortColumn = null; 
                 sortDirection = 'asc';
                 resetFilterSelects(); 
                 destroyAllDashboardCharts(); 
                 clearDashboardStats();
                 logTableBody.innerHTML = '';
                 tableRowCountEl.textContent = '';
+                renderPaginationControls(0, ITEMS_PER_PAGE, 1); // Limpiar paginación
                 resultsSection.classList.add('hidden'); 
                 quizAnalysisRow.classList.add('hidden');
             } else {
@@ -1519,8 +1559,6 @@
             ipFilterSelect.disabled = true;
             ipFilterHelpText.textContent = "Cargue un archivo CSV con columna de IP para activar este filtro.";
             setDefaultTimes(); 
-            // No reseteamos startDateInput y endDateInput aquí, se manejarán por
-            // la carga del archivo o por setDefaultDates si no hay archivo/datos.
         }
 
         function clearDashboardStats() {
@@ -1556,7 +1594,6 @@
             if (dashAvgQuizTimePerUserInstance) { dashAvgQuizTimePerUserInstance.destroy(); dashAvgQuizTimePerUserInstance = null; }
             if (dashQuizTimeVsPagesInstance) { dashQuizTimeVsPagesInstance.destroy(); dashQuizTimeVsPagesInstance = null; }
 
-
             let canvasIds = [
                 'dashUserActivityChart', 'dashEventsOverTimeChart', 'dashComponentActivityChart',
                 'dashActivityByHourChart', 'dashActivityByDayOfWeekChart', 'dashComponentBreakdownChart', 'dashActivityByContextChart',
@@ -1573,9 +1610,10 @@
                 }
             });
         }
-
+        
         async function handleAnalysisRequest() {
             const file = csvFileInput.files[0];
+            currentPage = 1; // Resetear paginación al inicio de cualquier análisis
             
             if (parsedDataCache.length > 0 && file === undefined) { 
                 showLoading(true);
@@ -1593,7 +1631,7 @@
             }
             
             showLoading(true);
-            showUserMessage('Leyendo y parseando archivo...', 'info');
+            showUserMessage('Leyendo y parseando archivo ...', 'info');
             resultsSection.classList.add('hidden'); 
             quizAnalysisRow.classList.add('hidden');
             
@@ -1612,83 +1650,160 @@
             maxDateFromLog = null;
             sortColumn = null;      
             sortDirection = 'asc'; 
-            resetFilterSelects(); // Esto resetea tiempos, pero las fechas se manejarán abajo
+            resetFilterSelects();
 
-            try {
-                const csvText = await readFileAsText(file);
-                parsedDataCache = parseCSV(csvText);
+            Papa.parse(file, {
+                worker: true, 
+                header: true, 
+                skipEmptyLines: true,
+                dynamicTyping: true, 
+                complete: function(results) {
+                    console.log("Papa Parse: Parseo completado en Web Worker.");
+                    if (results.errors.length > 0) {
+                        console.error("Errores durante el parseo:", results.errors);
+                        let errorMsg = "Errores encontrados al parsear el CSV:\n";
+                        results.errors.forEach(err => {
+                            errorMsg += `- Fila ${err.row}: ${err.message} (Tipo: ${err.type}, Código: ${err.code})\n`;
+                        });
+                        showUserMessage(errorMsg, "danger");
+                        csvFileInput.value = "";
+                        setDefaultDates();
+                        resultsSection.classList.add('hidden');
+                        quizAnalysisRow.classList.add('hidden');
+                        showLoading(false);
+                        return;
+                    }
 
-                if (!parsedDataCache || parsedDataCache.length === 0) {
-                    showUserMessage("No se pudieron procesar datos del CSV o el archivo está vacío.", "danger");
-                    csvFileInput.value = ""; 
+                    const rawParsedData = results.data;
+                    parsedDataCache = transformPapaParseResults(rawParsedData);
+
+                    if (!parsedDataCache || parsedDataCache.length === 0) {
+                        showUserMessage("No se pudieron procesar datos del CSV o el archivo está vacío (después de Papa Parse).", "danger");
+                        csvFileInput.value = ""; 
+                        setDefaultDates(); 
+                        resultsSection.classList.add('hidden');
+                        quizAnalysisRow.classList.add('hidden');
+                        showLoading(false);
+                        return;
+                    }
+
+                    if (parsedDataCache.length > 0) {
+                        let minTimestamp = Infinity;
+                        let maxTimestamp = -Infinity;
+                        parsedDataCache.forEach(row => {
+                            if (row.PARSED_TIME) {
+                                const timestamp = row.PARSED_TIME.getTime();
+                                if (timestamp < minTimestamp) minTimestamp = timestamp;
+                                if (timestamp > maxTimestamp) maxTimestamp = timestamp;
+                            }
+                        });
+
+                        if (minTimestamp !== Infinity) {
+                            minDateFromLog = new Date(minTimestamp);
+                            startDateInput.valueAsDate = minDateFromLog;
+                        } else { minDateFromLog = null; setDefaultDates(); }
+                        if (maxTimestamp !== -Infinity) {
+                            maxDateFromLog = new Date(maxTimestamp);
+                            endDateInput.valueAsDate = maxDateFromLog;
+                        } else { maxDateFromLog = null; setDefaultDates(); }
+                    } else {
+                         minDateFromLog = null; maxDateFromLog = null; setDefaultDates(); 
+                    }
+
+                    globallyProcessedDataForBaseLists = applyGlobalExclusions(parsedDataCache);
+
+                    const originalHeaders = results.meta.fields; 
+                    if (originalHeaders && originalHeaders.includes(CSV_COLUMN_MAPPING.IP_ADDRESS)) {
+                         ipColumnAvailable = true; 
+                         ipFilterSelect.disabled = false;
+                         ipFilterHelpText.textContent = "Seleccione una o más IPs. Ninguna selección implica todas.";
+                    } else {
+                        ipColumnAvailable = false;
+                        ipFilterSelect.disabled = true;
+                        ipFilterHelpText.textContent = "Columna 'Dirección IP' no encontrada en el archivo.";
+                        console.warn("La columna '" + CSV_COLUMN_MAPPING.IP_ADDRESS + "' no se encontró. Encabezados detectados:", originalHeaders);
+                    }
+                    
+                    processAndDisplayData(parsedDataCache); 
+                    resultsSection.classList.remove('hidden');
+                    showLoading(false); 
+                },
+                error: function(err, file) {
+                    console.error("Error con Papa Parse:", err);
+                    showUserMessage(`Error al procesar el archivo con Papa Parse: ${err.message}. Revisa la consola.`, "danger");
                     parsedDataCache = [];
-                    setDefaultDates(); // Restablecer fechas a default si el CSV está vacío o es inválido
+                    globallyProcessedDataForBaseLists = [];
+                    csvFileInput.value = ""; 
+                    minDateFromLog = null; maxDateFromLog = null; 
+                    setDefaultDates();
                     resultsSection.classList.add('hidden');
                     quizAnalysisRow.classList.add('hidden');
-                    return;
+                    showLoading(false);
                 }
-
-                if (parsedDataCache.length > 0) {
-                    let minTimestamp = Infinity;
-                    let maxTimestamp = -Infinity;
-                    parsedDataCache.forEach(row => {
-                        if (row.PARSED_TIME) {
-                            const timestamp = row.PARSED_TIME.getTime();
-                            if (timestamp < minTimestamp) minTimestamp = timestamp;
-                            if (timestamp > maxTimestamp) maxTimestamp = timestamp;
-                        }
-                    });
-
-                    if (minTimestamp !== Infinity) {
-                        minDateFromLog = new Date(minTimestamp);
-                        startDateInput.valueAsDate = minDateFromLog;
-                    } else { 
-                        minDateFromLog = null; // Asegurar que esté nulo si no se encontró
-                        setDefaultDates(); 
-                    }
-                    if (maxTimestamp !== -Infinity) {
-                        maxDateFromLog = new Date(maxTimestamp);
-                        endDateInput.valueAsDate = maxDateFromLog;
-                    } else { 
-                        maxDateFromLog = null; // Asegurar que esté nulo si no se encontró
-                        setDefaultDates(); 
-                    }
-                } else {
-                     minDateFromLog = null; maxDateFromLog = null; // Asegurar que estén nulos
-                     setDefaultDates(); 
-                }
-
-
-                globallyProcessedDataForBaseLists = applyGlobalExclusions(parsedDataCache);
-
-                if (parsedDataCache.length > 0 && parsedDataCache[0].hasOwnProperty('IP_ADDRESS')) {
-                    ipColumnAvailable = true; 
-                    ipFilterSelect.disabled = false;
-                    ipFilterHelpText.textContent = "Seleccione una o más IPs. Ninguna selección implica todas.";
-                } else {
-                    ipColumnAvailable = false;
-                    ipFilterSelect.disabled = true;
-                    ipFilterHelpText.textContent = "Columna 'Dirección IP' no encontrada en el archivo.";
-                }
-                
-                processAndDisplayData(parsedDataCache); 
-                resultsSection.classList.remove('hidden');
-
-            } catch (error) {
-                console.error("Error durante el análisis:", error);
-                showUserMessage(`Error al procesar el archivo: ${error.message}. Revisa la consola.`, "danger");
-                parsedDataCache = [];
-                globallyProcessedDataForBaseLists = [];
-                csvFileInput.value = ""; 
-                minDateFromLog = null; maxDateFromLog = null; 
-                setDefaultDates();
-                resultsSection.classList.add('hidden');
-                quizAnalysisRow.classList.add('hidden');
-            } finally {
-                showLoading(false);
-            }
+            });
         }
         
+        function transformPapaParseResults(papaResultsData) {
+            const data = [];
+            const csvHeaderToStandardKeyMap = {};
+            for (const standardKey in CSV_COLUMN_MAPPING) {
+                csvHeaderToStandardKeyMap[CSV_COLUMN_MAPPING[standardKey]] = standardKey;
+            }
+
+            for (let i = 0; i < papaResultsData.length; i++) {
+                const papaRow = papaResultsData[i]; 
+                const rowObject = {};
+                let hasRequiredColumns = true;
+
+                for (const csvHeaderName in papaRow) {
+                    if (papaRow.hasOwnProperty(csvHeaderName)) {
+                        const trimmedCsvHeaderName = csvHeaderName.trim();
+                        const standardKey = csvHeaderToStandardKeyMap[trimmedCsvHeaderName];
+                        if (standardKey) {
+                            rowObject[standardKey] = papaRow[csvHeaderName];
+                        }
+                    }
+                }
+                
+                if (!rowObject.TIME || !rowObject.FULL_NAME || !rowObject.COMPONENT || !rowObject.EVENT_NAME || !rowObject.EVENT_CONTEXT || !rowObject.DESCRIPTION) {
+                    hasRequiredColumns = false; 
+                }
+
+                if (hasRequiredColumns) {
+                    let parsedDate;
+                    if (rowObject.TIME instanceof Date) {
+                        parsedDate = rowObject.TIME;
+                    } else if (typeof rowObject.TIME === 'string') {
+                        parsedDate = parseMoodleDate(String(rowObject.TIME));
+                    } else if (typeof rowObject.TIME === 'number') { 
+                        const dateFromTimestamp = new Date(rowObject.TIME);
+                        if (!isNaN(dateFromTimestamp.getTime())) {
+                           console.warn(`Timestamp numérico en columna TIME en fila ${i+1}: "${rowObject.TIME}". Se intentará parsear como string.`);
+                           parsedDate = parseMoodleDate(String(rowObject.TIME)); 
+                        } else {
+                           parsedDate = null;
+                        }
+                         if (!parsedDate) console.warn(`Formato de fecha numérico inesperado o no convertible en fila ${i+1}: "${rowObject.TIME}".`);
+                    } else {
+                        console.warn(`Formato de fecha inesperado en fila ${i+1}: "${rowObject.TIME}". Tipo: ${typeof rowObject.TIME}`);
+                        parsedDate = null;
+                    }
+                    
+                    if (parsedDate) {
+                        rowObject.PARSED_TIME = parsedDate;
+                        data.push(rowObject);
+                    } else {
+                        console.warn(`Fecha inválida (después de transformación) en fila ${i+1}: "${rowObject.TIME}". Fila omitida.`);
+                    }
+                } else {
+                     console.warn(`Faltan columnas requeridas (después de transformación) en fila ${i+1}: ${JSON.stringify(papaRow)}. Fila omitida.`);
+                }
+            }
+            
+            data.sort((a, b) => (a.PARSED_TIME ? a.PARSED_TIME.getTime() : 0) - (b.PARSED_TIME ? b.PARSED_TIME.getTime() : 0));
+            return data;
+        }
+
         function showLoading(isLoading) {
             const controls = [
                 csvFileInput, startDateInput, endDateInput, startTimeFilter, endTimeFilter,
@@ -1708,82 +1823,6 @@
                     }
                 });
             }
-        }
-
-        function readFileAsText(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = event => resolve(event.target.result);
-                reader.onerror = error => reject(error);
-                reader.readAsText(file, 'UTF-8');
-            });
-        }
-
-        function parseCSV(csvText) {
-            const lines = csvText.trim().split(/\r?\n/);
-            if (lines.length < 2) return [];
-            const rawHeaderLine = lines[0].trim();
-            const headerNames = parseCSVLine(rawHeaderLine); 
-            const headerToStandardKeyMap = {};
-            for (const key in CSV_COLUMN_MAPPING) {
-                headerToStandardKeyMap[CSV_COLUMN_MAPPING[key]] = key;
-            }
-            const columnIndexToStandardKey = headerNames.map(name => headerToStandardKeyMap[name.trim()] || null);
-            const data = [];
-            for (let i = 1; i < lines.length; i++) {
-                const lineContent = lines[i].trim();
-                if (lineContent === '') continue;
-                const values = parseCSVLine(lineContent);
-                if (values.length !== headerNames.length) {
-                    console.warn(`Discrepancia en número de columnas en línea ${i+1}. Esperado: ${headerNames.length}, Obtenido: ${values.length}. Línea: "${lines[i]}"`);
-                    continue; 
-                }
-                const rowObject = {};
-                let hasRequiredColumns = true;
-                columnIndexToStandardKey.forEach((standardKey, index) => {
-                    if (standardKey) rowObject[standardKey] = values[index];
-                });
-                
-                if (!rowObject.TIME || !rowObject.FULL_NAME || !rowObject.COMPONENT || !rowObject.EVENT_NAME || !rowObject.EVENT_CONTEXT || !rowObject.DESCRIPTION) {
-                    hasRequiredColumns = false; 
-                }
-
-                if (hasRequiredColumns) {
-                    const parsedDate = parseMoodleDate(rowObject.TIME);
-                    if (parsedDate) {
-                        rowObject.PARSED_TIME = parsedDate;
-                        data.push(rowObject);
-                    } else {
-                        console.warn(`Fecha inválida en línea ${i+1}: "${rowObject.TIME}". Fila omitida.`);
-                    }
-                } else {
-                     console.warn(`Faltan columnas requeridas en línea ${i+1}. Fila omitida.`);
-                }
-            }
-            data.sort((a, b) => a.PARSED_TIME - b.PARSED_TIME);
-            return data;
-        }
-
-        function parseCSVLine(line) {
-            const values = [];
-            let inQuotes = false;
-            let currentValue = '';
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                if (char === '"') {
-                    if (inQuotes && i + 1 < line.length && line[i+1] === '"') {
-                        currentValue += '"'; i++; 
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
-                } else if (char === ',' && !inQuotes) {
-                    values.push(currentValue); currentValue = '';
-                } else {
-                    currentValue += char;
-                }
-            }
-            values.push(currentValue);
-            return values.map(v => v.trim()); 
         }
         
         function parseMoodleDate(dateString) {
@@ -1830,7 +1869,6 @@
             const selectedContext = contextFilterSelect.value;
             const selectedIPs = Array.from(ipFilterSelect.selectedOptions).map(opt => opt.value);
 
-
             userFilterSelect.innerHTML = '<option value="ALL_USERS">Todos los Alumnos</option>';
             uniqueUserNames.forEach(name => {
                 const option = document.createElement('option'); option.value = name; option.textContent = name;
@@ -1854,7 +1892,6 @@
             });
             if (componentFilterSelect.querySelector(`option[value="${selectedComponent}"]`)) componentFilterSelect.value = selectedComponent;
             else componentFilterSelect.value = "ALL_COMPONENTS";
-
 
             contextFilterSelect.innerHTML = '<option value="ALL_CONTEXTS">Todos los Contextos</option>';
             uniqueContexts.forEach(name => {
@@ -1880,13 +1917,11 @@
                 ipFilterSelect.disabled = true;
                 ipFilterHelpText.textContent = "Columna 'Dirección IP' no encontrada en el archivo.";
             }
-
             areFiltersPopulated = true;
         }
         
         function applyGlobalExclusions(sourceData) {
             let data = [...sourceData];
-
             if (excludedUserSubstrings.length > 0) {
                 data = data.filter(row => {
                     const userNameLower = (row.FULL_NAME || "").toLowerCase();
@@ -1915,12 +1950,15 @@
         }
 
         function processAndDisplayData(sourceDataIgnored) { 
+            currentPage = 1; // Resetear a la primera página cuando los filtros cambian
+
             if (!parsedDataCache || parsedDataCache.length === 0) {
                 showUserMessage("No hay datos cargados para analizar.", "warning");
                 resultsSection.classList.add('hidden');
                 quizAnalysisRow.classList.add('hidden');
                 destroyAllDashboardCharts();
                 clearDashboardStats();
+                renderLogTable([]); // Para limpiar tabla y paginación
                 return;
             }
             
@@ -1939,7 +1977,6 @@
             const selectedComponent = componentFilterSelect.value; 
             const selectedContext = contextFilterSelect.value;
             const selectedIPs = Array.from(ipFilterSelect.selectedOptions).map(opt => opt.value);
-
 
             if (!startDateVal || !endDateVal) {
                 showUserMessage("Fechas de inicio o fin inválidas.", "danger");
@@ -2010,8 +2047,7 @@
                 dashDateRangeEl.textContent = `${startDateVal.toLocaleDateString()} - ${endDateVal.toLocaleDateString()}`;
                 destroyAllDashboardCharts(); 
                 renderAllDashboardCharts(); 
-                logTableBody.innerHTML = '<tr><td colspan="7" class="text-center">No hay datos para mostrar.</td></tr>';
-                tableRowCountEl.textContent = `Mostrando 0 filas.`;
+                renderLogTable(filteredDataForCharts); // Asegura que tabla y paginación se limpien
                 resultsSection.classList.remove('hidden'); 
                 if(allQuizAttempts.length > 0) quizAnalysisRow.classList.remove('hidden'); else quizAnalysisRow.classList.add('hidden');
                 return;
@@ -2054,7 +2090,6 @@
             }
             renderLogTable(filteredDataForCharts);
 
-
             resultsSection.classList.remove('hidden');
             if(allQuizAttempts.length > 0) {
                 quizAnalysisRow.classList.remove('hidden');
@@ -2071,7 +2106,6 @@
         
         function calculateUserActivityData(dataForCounts, topN = 15, useZeroInclusionLogic = false, baseDataForEntityList = []) {
             const activity = {};
-
             if (useZeroInclusionLogic && baseDataForEntityList.length > 0) {
                 const uniqueBaseUsers = [...new Set(baseDataForEntityList.map(row => row.FULL_NAME || "Usuario Desconocido"))];
                 uniqueBaseUsers.forEach(user => activity[user] = 0);
@@ -2097,7 +2131,6 @@
 
         function calculateComponentActivityData(dataForCounts, topN = 10, useZeroInclusionLogic = false, baseDataForEntityList = []) {
             const activity = {};
-
             if (useZeroInclusionLogic && baseDataForEntityList.length > 0) {
                 const uniqueBaseComponents = [...new Set(baseDataForEntityList.map(row => row.COMPONENT || "Componente Desconocido"))];
                 uniqueBaseComponents.forEach(component => activity[component] = 0);
@@ -2120,7 +2153,6 @@
             const finalSorted = (topN > 0 && sortedArray.length > topN) ? sortedArray.slice(0, topN) : sortedArray;
             return { labels: finalSorted.map(e => e[0]), dataValues: finalSorted.map(e => e[1]) };
         }
-
 
         function calculateEventsOverTimeData(data, filterStartDate, filterEndDate) {
             const eventsByDay = {};
@@ -2174,7 +2206,6 @@
         
         function calculateActivityByContextData(dataForCounts, topN = 10, useBaseListForZeros = false, baseDataForEntityList = []) {
             const activity = {};
-
             if (useBaseListForZeros && baseDataForEntityList.length > 0) {
                 const allPossibleContextsFromBase = [...new Set(baseDataForEntityList.map(row => row.EVENT_CONTEXT || "Contexto Desconocido"))];
                 allPossibleContextsFromBase.forEach(ctx => activity[ctx] = 0);
@@ -2199,7 +2230,6 @@
             }
             return { labels: sorted.map(e => e[0]), dataValues: sorted.map(e => e[1]) };
         }
-
 
         function calculateComponentBreakdownData(data, topNComponents = 3, topNEventsPerComponent = 3) {
             const componentActivity = {};
@@ -2391,7 +2421,6 @@
         function calculateTopIPsByEventsData(dataForCounts, topN = 10, useZeroInclusionLogic = false, baseDataForEntityList = []) {
             if (!ipColumnAvailable) return { labels: [], dataValues: [] };
             const ipActivity = {};
-
             if (useZeroInclusionLogic && baseDataForEntityList.length > 0) {
                 const uniqueBaseIPs = [...new Set(baseDataForEntityList.map(row => row.IP_ADDRESS).filter(ip => ip && ip !== "IP Desconocida"))];
                 uniqueBaseIPs.forEach(ip => ipActivity[ip] = 0);
@@ -2420,7 +2449,6 @@
         function calculateUsersPerIPData(dataForCounts, topN = 10, useZeroInclusionLogic = false, baseDataForEntityList = []) {
             if (!ipColumnAvailable) return { labels: [], dataValues: [] };
             const ipUserSets = {};
-
             if (useZeroInclusionLogic && baseDataForEntityList.length > 0) {
                 const uniqueBaseIPs = [...new Set(baseDataForEntityList.map(row => row.IP_ADDRESS).filter(ip => ip && ip !== "IP Desconocida"))];
                 uniqueBaseIPs.forEach(ip => ipUserSets[ip] = new Set());
@@ -2453,7 +2481,6 @@
         function calculateIPsPerUserData(dataForCounts, topN = 10, useZeroInclusionLogic = false, baseDataForEntityList = []) {
             if (!ipColumnAvailable) return { labels: [], dataValues: [] };
             const userIPSets = {};
-
             if (useZeroInclusionLogic && baseDataForEntityList.length > 0) {
                 const uniqueBaseUsers = [...new Set(baseDataForEntityList.map(row => row.FULL_NAME || "Usuario Desconocido"))];
                 uniqueBaseUsers.forEach(user => userIPSets[user] = new Set());
@@ -2486,9 +2513,7 @@
         function extractQuizAttempts(logData) {
             const attempts = [];
             const quizLogs = logData.filter(row => row.COMPONENT === 'Cuestionario');
-            
             const userContextMap = new Map(); 
-
             for (const log of quizLogs) {
                 const user = log.FULL_NAME || "Usuario Desconocido";
                 const context = log.EVENT_CONTEXT || "Contexto Desconocido";
@@ -2512,15 +2537,10 @@
                     };
                 } else if (userData.activeAttempt) {
                     const currentAttempt = userData.activeAttempt;
-                    
                     const logAttemptIdMatch = description.match(/attempt with id '(\d+)'/);
                     if (logAttemptIdMatch && currentAttempt.attemptId && logAttemptIdMatch[1] !== currentAttempt.attemptId) {
-                        // Potentially an event from a different, interleaved attempt. For simplicity, we ignore.
-                        // A more robust solution would track multiple active attempts by ID.
                         continue; 
                     }
-
-
                     if (eventName === "Intento de cuestionario visualizado") {
                         const pageMatch = description.match(/page '(\d+)'/);
                         if (pageMatch && pageMatch[1]) {
@@ -2547,13 +2567,11 @@
 
         function calculateQuizTimeDistributionData(quizAttempts, numBins = 10) {
             if (!quizAttempts || quizAttempts.length === 0) return { labels: [], dataValues: [] };
-
             const durations = quizAttempts.map(a => a.durationSeconds).sort((a, b) => a - b);
             if (durations.length === 0) return { labels: [], dataValues: [] };
 
             const minDuration = 0; 
             const maxDuration = durations[durations.length - 1];
-            
             if (maxDuration < 1) return { labels: [`0-${maxDuration.toFixed(1)}s`], dataValues: [durations.length] };
 
             const binSize = Math.max(1, Math.ceil((maxDuration - minDuration) / numBins)); 
@@ -2585,14 +2603,11 @@
             if (!foundData && durations.length > 0) { 
                  return { labels: [`0-${Math.ceil(maxDuration)}s`], dataValues: [durations.length] };
             }
-
-
             return { labels: filteredLabels, dataValues: filteredDataValues };
         }
 
         function calculateAvgQuizTimePerUserData(quizAttempts, topN = 0) { 
             if (!quizAttempts || quizAttempts.length === 0) return { labels: [], dataValues: [] };
-
             const userTimes = {};
             quizAttempts.forEach(attempt => {
                 if (!userTimes[attempt.user]) {
@@ -2608,7 +2623,6 @@
             }));
 
             avgTimes.sort((a, b) => a.avgDuration - b.avgDuration);
-            
             const finalData = (topN > 0 && avgTimes.length > topN) ? avgTimes.slice(0, topN) : avgTimes;
 
             return {
@@ -2625,7 +2639,6 @@
                 label: `${attempt.user} (${attempt.context.replace('Cuestionario: ','')})`
             }));
         }
-
 
         const CHART_COLORS = [
             'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)',
@@ -2677,7 +2690,6 @@
                         ctx.clearRect(0,0, canvas.width, canvas.height);
                         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "14px " + Chart.defaults.font.family; ctx.fillStyle = "#6c757d";
                         ctx.fillText("No hay datos de intentos de cuestionario para mostrar.", canvas.width / 2, canvas.height / 2);
-
                     }
                 });
             }
@@ -2741,7 +2753,6 @@
                 } else if (isQuizChart && chartConfig.data.labels && chartConfig.data.labels.length === 0 && chartConfig.data.datasets[0].data.length === 0){
                      specificNoDataMsg = "No hay datos para este gráfico de cuestionario.";
                 }
-
 
                 ctx.save();
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "14px " + Chart.defaults.font.family; ctx.fillStyle = "#6c757d"; 
@@ -3181,7 +3192,6 @@
             dashQuizTimeVsPagesInstance = renderGenericChart('dashQuizTimeVsPagesChart', dashQuizTimeVsPagesInstance, chartConfig, "No hay datos de intentos de cuestionario.");
         }
         
-
         function scatterTooltipCallbacks(xLabel = 'X', yLabel = 'Y') {
             return {
                 callbacks: {
@@ -3242,7 +3252,6 @@
                 ctx.restore();
                 return;
             }
-
 
             const isRankingChartType = ['userActivity', 'componentActivity', 'activityByContext', 'topIPsByEvents', 'usersPerIP', 'ipsPerUser', 'avgQuizTimePerUser'].includes(type);
             if (filteredDataForCharts.length === 0 && !(isRankingChartType && includeZeroActivity) && !isQuizModalChart) { 
@@ -3507,7 +3516,7 @@
                     canvas._chartjs = modalChartInstance;
                 }
             } else { 
-                 ctx.save();
+                ctx.save();
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.font = "16px " + Chart.defaults.font.family;
@@ -3517,9 +3526,8 @@
             }
         }
 
-        function renderLogTable(data) {
+        function renderLogTable(data) { // data es filteredDataForCharts
             logTableBody.innerHTML = ''; 
-            tableRowCountEl.textContent = '';
 
             document.querySelectorAll('#logTableSection th').forEach(th => {
                 th.classList.remove('sort-asc', 'sort-desc');
@@ -3531,14 +3539,20 @@
                 }
             }
 
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 logTableBody.innerHTML = '<tr><td colspan="7" class="text-center">No hay datos para mostrar.</td></tr>';
                 tableRowCountEl.textContent = `Mostrando 0 filas.`;
+                renderPaginationControls(0, ITEMS_PER_PAGE, currentPage);
                 return;
             }
             
+            const totalItems = data.length;
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const paginatedData = data.slice(startIndex, endIndex);
+
             const fragment = document.createDocumentFragment();
-            data.forEach(row => {
+            paginatedData.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${row.TIME || ''}</td>
@@ -3552,8 +3566,136 @@
                 fragment.appendChild(tr);
             });
             logTableBody.appendChild(fragment);
-            tableRowCountEl.textContent = `Mostrando ${data.length} fila(s).`;
+            
+            const startRow = totalItems === 0 ? 0 : startIndex + 1;
+            const endRow = Math.min(endIndex, totalItems);
+            tableRowCountEl.textContent = `Mostrando ${startRow}-${endRow} de ${totalItems} fila(s).`;
+
+            renderPaginationControls(totalItems, ITEMS_PER_PAGE, currentPage);
         }
+        
+        function renderPaginationControls(totalItems, itemsPerPage, currentPage) {
+            const paginationUl = document.getElementById('logTablePagination');
+            paginationUl.innerHTML = '';
+
+            if (totalItems === 0) return;
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            if (totalPages <= 1) return; 
+
+            const maxPagesToShow = 5; 
+            let startPage, endPage;
+
+            if (totalPages <= maxPagesToShow) {
+                startPage = 1;
+                endPage = totalPages;
+            } else {
+                const maxPagesBeforeCurrentPage = Math.floor(maxPagesToShow / 2);
+                const maxPagesAfterCurrentPage = Math.ceil(maxPagesToShow / 2) - 1;
+                if (currentPage <= maxPagesBeforeCurrentPage) {
+                    startPage = 1;
+                    endPage = maxPagesToShow;
+                } else if (currentPage + maxPagesAfterCurrentPage >= totalPages) {
+                    startPage = totalPages - maxPagesToShow + 1;
+                    endPage = totalPages;
+                } else {
+                    startPage = currentPage - maxPagesBeforeCurrentPage;
+                    endPage = currentPage + maxPagesAfterCurrentPage;
+                }
+            }
+
+            const prevLi = document.createElement('li');
+            prevLi.classList.add('page-item');
+            if (currentPage === 1) prevLi.classList.add('disabled');
+            const prevA = document.createElement('a');
+            prevA.classList.add('page-link');
+            prevA.href = '#';
+            prevA.textContent = 'Anterior';
+            prevA.dataset.page = 'prev';
+            prevLi.appendChild(prevA);
+            paginationUl.appendChild(prevLi);
+
+            if (startPage > 1) {
+                const firstLi = createPageItem(1, currentPage);
+                paginationUl.appendChild(firstLi);
+                if (startPage > 2) {
+                    const ellipsisLi = createEllipsisItem();
+                    paginationUl.appendChild(ellipsisLi);
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = createPageItem(i, currentPage);
+                paginationUl.appendChild(pageLi);
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsisLi = createEllipsisItem();
+                    paginationUl.appendChild(ellipsisLi);
+                }
+                const lastLi = createPageItem(totalPages, currentPage);
+                paginationUl.appendChild(lastLi);
+            }
+
+            const nextLi = document.createElement('li');
+            nextLi.classList.add('page-item');
+            if (currentPage === totalPages) nextLi.classList.add('disabled');
+            const nextA = document.createElement('a');
+            nextA.classList.add('page-link');
+            nextA.href = '#';
+            nextA.textContent = 'Siguiente';
+            nextA.dataset.page = 'next';
+            nextLi.appendChild(nextA);
+            paginationUl.appendChild(nextLi);
+        }
+
+        function createPageItem(pageNumber, currentPage) {
+            const li = document.createElement('li');
+            li.classList.add('page-item');
+            if (pageNumber === currentPage) li.classList.add('active');
+            const a = document.createElement('a');
+            a.classList.add('page-link');
+            a.href = '#';
+            a.textContent = pageNumber;
+            a.dataset.page = pageNumber;
+            li.appendChild(a);
+            return li;
+        }
+
+        function createEllipsisItem() {
+            const li = document.createElement('li');
+            li.classList.add('page-item', 'disabled');
+            const span = document.createElement('span');
+            span.classList.add('page-link');
+            span.textContent = '...';
+            li.appendChild(span);
+            return li;
+        }
+        
+        function handlePaginationClick(event) {
+            event.preventDefault();
+            const target = event.target.closest('.page-link');
+            if (!target || target.closest('.page-item.disabled') || target.closest('.page-item.active')) {
+                return;
+            }
+
+            const pageTarget = target.dataset.page;
+            const totalPages = Math.ceil(filteredDataForCharts.length / ITEMS_PER_PAGE);
+
+            if (pageTarget === 'prev') {
+                if (currentPage > 1) currentPage--;
+            } else if (pageTarget === 'next') {
+                if (currentPage < totalPages) currentPage++;
+            } else {
+                const pageNum = parseInt(pageTarget, 10);
+                if (pageNum >= 1 && pageNum <= totalPages) {
+                    currentPage = pageNum;
+                }
+            }
+            renderLogTable(filteredDataForCharts);
+        }
+
 
         function handleSortTable(event) {
             const targetHeader = event.target.closest('th[data-sort-key]');
@@ -3567,7 +3709,8 @@
                 sortColumn = newSortColumn;
                 sortDirection = 'asc';
             }
-
+            
+            currentPage = 1; // Resetear a la primera página después de ordenar
             sortFilteredDataForTable(); 
             renderLogTable(filteredDataForCharts); 
         }
@@ -3621,7 +3764,7 @@
                 CSV_COLUMN_MAPPING.IP_ADDRESS 
             ];
             
-            const dataForCsv = filteredDataForCharts.map(row => [
+            const dataForCsv = filteredDataForCharts.map(row => [ // Se usa filteredDataForCharts (todos los datos, no solo la página)
                 row.TIME || '',
                 row.FULL_NAME || '',
                 row.EVENT_CONTEXT || '',
@@ -3759,7 +3902,6 @@
                     return;
                 }
 
-
                 if (includeZeroActivity && allZeros && chartType !== 'scatterUsersEventsDay' && chartType !== 'scatterComponentsEventsUser' && chartType !== 'scatterContentViewParticipation' && !chartType.startsWith('bubble') && !isQuizChartTypeForDownload) {
                      if (chartData.labels && chartData.labels.length > 0 && chartData.datasets[0].data.length > 0) {
                         csvFormattedData = chartData.labels.map((label, index) => ({
@@ -3785,3 +3927,4 @@
     </script>
 </body>
 </html>
+```
