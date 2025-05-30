@@ -7,10 +7,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    <!-- Papa Parse para CSV grandes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     
     <script src="help_content.js"></script> 
+    <script src="report_generator.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -142,7 +142,7 @@
             transform: translateY(-1px); 
         }
         .pagination .page-link {
-            font-size: 0.875rem; /* pagination-sm specific link size if needed */
+            font-size: 0.875rem;
         }
         .pagination .page-item.disabled .page-link {
             color: #6c757d;
@@ -155,6 +155,11 @@
             color: #fff;
             background-color: #0d6efd;
             border-color: #0d6efd;
+        }
+        .navbar-nav .dropdown-menu .dropdown-item.disabled {
+            color: #adb5bd;
+            pointer-events: none;
+            background-color: transparent;
         }
 
 
@@ -170,14 +175,14 @@
             }
             #logTableSection .d-flex.justify-content-between {
                 flex-direction: column;
-                align-items: flex-start !important; /* Override justify-content-between */
+                align-items: flex-start !important;
             }
             #logTableSection .pagination {
                 margin-top: 0.5rem;
-                justify-content: flex-start !important; /* Align pagination to start on small screens */
+                justify-content: flex-start !important;
             }
             #tableRowCount {
-                 width: 100%; /* Make sure row count takes full width before pagination */
+                 width: 100%;
             }
         }
     </style>
@@ -191,7 +196,24 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                     <li class="nav-item">
+                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownReports" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Informes Imprimibles">
+                            <i class="bi bi-printer"></i> Informes
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownReports">
+                            <li><a class="dropdown-item report-link" href="#" data-report-type="general">Informe General</a></li>
+                            <li><a class="dropdown-item report-link" href="#" data-report-type="studentActivity">Actividad de Alumnos (Global)</a></li>
+                            <li><a class="dropdown-item report-link" href="#" data-report-type="componentActivity">Actividad por Componentes (Global)</a></li>
+                            <li><a class="dropdown-item report-link" href="#" data-report-type="contextActivity">Actividad por Contexto (Global)</a></li>
+                            <li><a class="dropdown-item report-link" href="#" data-report-type="eventsOverTime">Eventos por Día (Global)</a></li>
+                            <li><a class="dropdown-item report-link" href="#" data-report-type="ipsPerUser">IPs por Alumno (Global)</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item report-link disabled" href="#" data-report-type="singleStudent" id="reportLinkSingleStudent">Detalle de Alumno Seleccionado</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item report-link disabled" href="#" data-report-type="quizAttempts" id="reportLinkQuizAttempts">Tiempos de Cuestionarios</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" title="Configuración">
                             <i class="bi bi-gear-fill"></i>
                         </a>
@@ -616,7 +638,6 @@
                         <p id="tableRowCount" class="text-muted small mb-0"></p>
                         <nav aria-label="Navegación de logs">
                             <ul class="pagination pagination-sm justify-content-end mb-0" id="logTablePagination">
-                                <!-- Los ítems de paginación se generarán aquí -->
                             </ul>
                         </nav>
                     </div>
@@ -629,7 +650,7 @@
         </footer>
     </div>
 
-    <!-- Modal de Configuración (Existente) -->
+    <!-- Modales existentes (sin cambios, omitidos por brevedad) -->
     <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -677,8 +698,6 @@
             </div>
         </div>
     </div>
-    
-    <!-- Modal de Ayuda Genérico -->
     <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -695,409 +714,25 @@
             </div>
         </div>
     </div>
-
-    <!-- Modales de Gráficos Detallados (Existentes) -->
-    <div class="modal fade" id="userActivityModal" tabindex="-1" aria-labelledby="userActivityModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="userActivityModalLabel">Actividad por Alumno (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="userActivity" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="activityByUserChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="componentActivityModal" tabindex="-1" aria-labelledby="componentActivityModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="componentActivityModalLabel">Actividad por Componente (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="componentActivity" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="activityByComponentChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="eventsOverTimeModal" tabindex="-1" aria-labelledby="eventsOverTimeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="eventsOverTimeModalLabel">Eventos por Día (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="eventsOverTime" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="eventsOverTimeChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="activityByHourModal" tabindex="-1" aria-labelledby="activityByHourModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="activityByHourModalLabel">Eventos por Hora del Día (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="activityByHour" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="activityByHourChartModal"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="activityByDayOfWeekModal" tabindex="-1" aria-labelledby="activityByDayOfWeekModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="activityByDayOfWeekModalLabel">Eventos por Día de la Semana (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="activityByDayOfWeek" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="activityByDayOfWeekChartModal"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modal fade" id="componentBreakdownModal" tabindex="-1" aria-labelledby="componentBreakdownModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="componentBreakdownModalLabel">Desglose de Eventos en Componentes Principales (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="componentBreakdown" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="componentBreakdownChartModal"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="activityByContextModal" tabindex="-1" aria-labelledby="activityByContextModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="activityByContextModalLabel">Actividad por Contexto de Evento (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="activityByContext" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="activityByContextChartModal"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="scatterUsersEventsDayModal" tabindex="-1" aria-labelledby="scatterUsersEventsDayModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="scatterUsersEventsDayModalLabel">Dispersión: Usuarios Únicos vs Eventos Totales (por Día)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="scatterUsersEventsDay" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="scatterUsersEventsDayModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="scatterComponentsEventsUserModal" tabindex="-1" aria-labelledby="scatterComponentsEventsUserModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="scatterComponentsEventsUserModalLabel">Dispersión: Componentes Únicos vs Eventos Totales (por Alumno)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="scatterComponentsEventsUser" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="scatterComponentsEventsUserModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="scatterContentViewParticipationModal" tabindex="-1" aria-labelledby="scatterContentViewParticipationModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="scatterContentViewParticipationModalLabel">Dispersión: Eventos de Visualización vs Participación (por Alumno)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="scatterContentViewParticipation" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="scatterContentViewParticipationModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="bubbleStudentAnalysisModal" tabindex="-1" aria-labelledby="bubbleStudentAnalysisModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="bubbleStudentAnalysisModalLabel">Burbujas: Análisis de Alumnos</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="bubbleStudentAnalysis" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="bubbleStudentAnalysisModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="bubbleComponentAnalysisModal" tabindex="-1" aria-labelledby="bubbleComponentAnalysisModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="bubbleComponentAnalysisModalLabel">Burbujas: Análisis de Componentes</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="bubbleComponentAnalysis" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="bubbleComponentAnalysisModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="bubbleContextAnalysisModal" tabindex="-1" aria-labelledby="bubbleContextAnalysisModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="bubbleContextAnalysisModalLabel">Burbujas: Análisis de Contextos</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="bubbleContextAnalysis" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="bubbleContextAnalysisModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="topIPsByEventsModal" tabindex="-1" aria-labelledby="topIPsByEventsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="topIPsByEventsModalLabel">Top IPs por Número de Eventos (Detallado)</h5>
-                     <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="topIPsByEvents" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="topIPsByEventsModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="usersPerIPModal" tabindex="-1" aria-labelledby="usersPerIPModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="usersPerIPModalLabel">Top IPs por Número de Alumnos Únicos (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="usersPerIP" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="usersPerIPModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="ipsPerUserModal" tabindex="-1" aria-labelledby="ipsPerUserModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="ipsPerUserModalLabel">Top Alumnos por Número de IPs Únicas (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="ipsPerUser" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="ipsPerUserModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- NUEVOS MODALES PARA ANÁLISIS DE TIEMPOS DE CUESTIONARIOS -->
-    <div class="modal fade" id="quizTimeDistributionModal" tabindex="-1" aria-labelledby="quizTimeDistributionModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="quizTimeDistributionModalLabel">Distribución de Tiempos de Finalización de Cuestionarios (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="quizTimeDistribution" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="quizTimeDistributionModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="avgQuizTimePerUserModal" tabindex="-1" aria-labelledby="avgQuizTimePerUserModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="avgQuizTimePerUserModalLabel">Tiempo Promedio por Intento de Cuestionario por Alumno (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="avgQuizTimePerUser" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="avgQuizTimePerUserModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="quizTimeVsPagesModal" tabindex="-1" aria-labelledby="quizTimeVsPagesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="quizTimeVsPagesModalLabel">Tiempo de Intento de Cuestionario vs. Número de Páginas Vistas (Detallado)</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="quizTimeVsPages" title="Descargar datos del gráfico (CSV)">
-                            <i class="bi bi-download"></i> CSV
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container-modal">
-                        <canvas id="quizTimeVsPagesModalCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- FIN NUEVOS MODALES -->
-
+    <div class="modal fade" id="userActivityModal" tabindex="-1" aria-labelledby="userActivityModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="userActivityModalLabel">Actividad por Alumno (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="userActivity" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="activityByUserChart"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="componentActivityModal" tabindex="-1" aria-labelledby="componentActivityModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="componentActivityModalLabel">Actividad por Componente (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="componentActivity" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="activityByComponentChart"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="eventsOverTimeModal" tabindex="-1" aria-labelledby="eventsOverTimeModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="eventsOverTimeModalLabel">Eventos por Día (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="eventsOverTime" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="eventsOverTimeChart"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="activityByHourModal" tabindex="-1" aria-labelledby="activityByHourModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="activityByHourModalLabel">Eventos por Hora del Día (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="activityByHour" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="activityByHourChartModal"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="activityByDayOfWeekModal" tabindex="-1" aria-labelledby="activityByDayOfWeekModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="activityByDayOfWeekModalLabel">Eventos por Día de la Semana (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="activityByDayOfWeek" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="activityByDayOfWeekChartModal"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="componentBreakdownModal" tabindex="-1" aria-labelledby="componentBreakdownModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="componentBreakdownModalLabel">Desglose de Eventos en Componentes Principales (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="componentBreakdown" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="componentBreakdownChartModal"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="activityByContextModal" tabindex="-1" aria-labelledby="activityByContextModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="activityByContextModalLabel">Actividad por Contexto de Evento (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="activityByContext" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="activityByContextChartModal"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="scatterUsersEventsDayModal" tabindex="-1" aria-labelledby="scatterUsersEventsDayModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="scatterUsersEventsDayModalLabel">Dispersión: Usuarios Únicos vs Eventos Totales (por Día)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="scatterUsersEventsDay" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="scatterUsersEventsDayModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="scatterComponentsEventsUserModal" tabindex="-1" aria-labelledby="scatterComponentsEventsUserModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="scatterComponentsEventsUserModalLabel">Dispersión: Componentes Únicos vs Eventos Totales (por Alumno)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="scatterComponentsEventsUser" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="scatterComponentsEventsUserModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="scatterContentViewParticipationModal" tabindex="-1" aria-labelledby="scatterContentViewParticipationModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="scatterContentViewParticipationModalLabel">Dispersión: Eventos de Visualización vs Participación (por Alumno)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="scatterContentViewParticipation" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="scatterContentViewParticipationModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="bubbleStudentAnalysisModal" tabindex="-1" aria-labelledby="bubbleStudentAnalysisModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="bubbleStudentAnalysisModalLabel">Burbujas: Análisis de Alumnos</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="bubbleStudentAnalysis" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="bubbleStudentAnalysisModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="bubbleComponentAnalysisModal" tabindex="-1" aria-labelledby="bubbleComponentAnalysisModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="bubbleComponentAnalysisModalLabel">Burbujas: Análisis de Componentes</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="bubbleComponentAnalysis" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="bubbleComponentAnalysisModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="bubbleContextAnalysisModal" tabindex="-1" aria-labelledby="bubbleContextAnalysisModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="bubbleContextAnalysisModalLabel">Burbujas: Análisis de Contextos</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="bubbleContextAnalysis" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="bubbleContextAnalysisModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="topIPsByEventsModal" tabindex="-1" aria-labelledby="topIPsByEventsModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="topIPsByEventsModalLabel">Top IPs por Número de Eventos (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="topIPsByEvents" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="topIPsByEventsModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="usersPerIPModal" tabindex="-1" aria-labelledby="usersPerIPModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="usersPerIPModalLabel">Top IPs por Número de Alumnos Únicos (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="usersPerIP" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="usersPerIPModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="ipsPerUserModal" tabindex="-1" aria-labelledby="ipsPerUserModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="ipsPerUserModalLabel">Top Alumnos por Número de IPs Únicas (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="ipsPerUser" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="ipsPerUserModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="quizTimeDistributionModal" tabindex="-1" aria-labelledby="quizTimeDistributionModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quizTimeDistributionModalLabel">Distribución de Tiempos de Finalización de Cuestionarios (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="quizTimeDistribution" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="quizTimeDistributionModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="avgQuizTimePerUserModal" tabindex="-1" aria-labelledby="avgQuizTimePerUserModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="avgQuizTimePerUserModalLabel">Tiempo Promedio por Intento de Cuestionario por Alumno (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="avgQuizTimePerUser" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="avgQuizTimePerUserModalCanvas"></canvas></div></div></div></div></div>
+    <div class="modal fade" id="quizTimeVsPagesModal" tabindex="-1" aria-labelledby="quizTimeVsPagesModalLabel" aria-hidden="true"><div class="modal-dialog modal-fullscreen"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quizTimeVsPagesModalLabel">Tiempo de Intento de Cuestionario vs. Número de Páginas Vistas (Detallado)</h5><div><button class="btn btn-sm btn-outline-secondary me-2 download-chart-csv-button" data-chart-type="quizTimeVsPages" title="Descargar datos del gráfico (CSV)"><i class="bi bi-download"></i> CSV</button><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div></div><div class="modal-body"><div class="chart-container-modal"><canvas id="quizTimeVsPagesModalCanvas"></canvas></div></div></div></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script>
@@ -1300,7 +935,12 @@
             saveSettingsButton.addEventListener('click', handleSaveSettings);
             includeZeroActivitySwitch.addEventListener('change', handleIncludeZeroActivityChange);
             
-            const reprocessAndDisplay = () => { if (parsedDataCache.length > 0) processAndDisplayData(parsedDataCache); };
+            const reprocessAndDisplay = () => { 
+                if (parsedDataCache.length > 0) {
+                    processAndDisplayData(parsedDataCache); 
+                    updateSingleStudentReportLinkState();
+                }
+            };
             startDateInput.addEventListener('change', reprocessAndDisplay);
             endDateInput.addEventListener('change', reprocessAndDisplay);
             startTimeFilter.addEventListener('change', reprocessAndDisplay);
@@ -1354,6 +994,7 @@
                     renderChartInModal(chartType, canvasIdInModal);
                     
                     bootstrapModal.show();
+                    return;
                 }
 
                 const downloadButton = event.target.closest('.download-chart-csv-button');
@@ -1374,7 +1015,18 @@
                             showUserMessage("Error: No se pudo obtener los datos del gráfico para descargar.", "danger");
                         }
                     }
+                    return;
                 }
+
+                const reportLink = event.target.closest('.report-link');
+                if (reportLink) {
+                    event.preventDefault();
+                    if (reportLink.classList.contains('disabled')) return;
+                    const reportType = reportLink.dataset.reportType;
+                    handleGenerateReport(reportType);
+                    return;
+                }
+
             });
 
 
@@ -1397,6 +1049,8 @@
             ipFilterSelect.disabled = true;
             ipFilterHelpText.textContent = "Cargue un archivo CSV con columna de IP para activar este filtro.";
             quizAnalysisRow.classList.add('hidden'); 
+            updateQuizReportLinkState();
+            updateSingleStudentReportLinkState(); 
         });
 
         function setDefaultDates() {
@@ -1439,9 +1093,11 @@
                 clearDashboardStats();
                 logTableBody.innerHTML = '';
                 tableRowCountEl.textContent = '';
-                renderPaginationControls(0, ITEMS_PER_PAGE, 1); // Limpiar paginación
+                renderPaginationControls(0, ITEMS_PER_PAGE, 1);
                 resultsSection.classList.add('hidden'); 
                 quizAnalysisRow.classList.add('hidden');
+                updateQuizReportLinkState();
+                updateSingleStudentReportLinkState();
             } else {
                 statusMessage.textContent = 'Ningún archivo seleccionado.';
                 statusMessage.className = 'mt-3 pt-2 border-top text-muted';
@@ -1613,7 +1269,7 @@
         
         async function handleAnalysisRequest() {
             const file = csvFileInput.files[0];
-            currentPage = 1; // Resetear paginación al inicio de cualquier análisis
+            currentPage = 1; 
             
             if (parsedDataCache.length > 0 && file === undefined) { 
                 showLoading(true);
@@ -1627,6 +1283,8 @@
                 showUserMessage("Por favor, selecciona un archivo CSV.", "danger");
                 resultsSection.classList.add('hidden');
                 quizAnalysisRow.classList.add('hidden');
+                updateQuizReportLinkState();
+                updateSingleStudentReportLinkState();
                 return;
             }
             
@@ -1634,6 +1292,8 @@
             showUserMessage('Leyendo y parseando archivo ...', 'info');
             resultsSection.classList.add('hidden'); 
             quizAnalysisRow.classList.add('hidden');
+            updateQuizReportLinkState();
+            updateSingleStudentReportLinkState();
             
             if(resultsSection.classList.contains('hidden')) {
                 destroyAllDashboardCharts();
@@ -1670,6 +1330,8 @@
                         setDefaultDates();
                         resultsSection.classList.add('hidden');
                         quizAnalysisRow.classList.add('hidden');
+                        updateQuizReportLinkState();
+                        updateSingleStudentReportLinkState();
                         showLoading(false);
                         return;
                     }
@@ -1683,6 +1345,8 @@
                         setDefaultDates(); 
                         resultsSection.classList.add('hidden');
                         quizAnalysisRow.classList.add('hidden');
+                        updateQuizReportLinkState();
+                        updateSingleStudentReportLinkState();
                         showLoading(false);
                         return;
                     }
@@ -1738,6 +1402,8 @@
                     setDefaultDates();
                     resultsSection.classList.add('hidden');
                     quizAnalysisRow.classList.add('hidden');
+                    updateQuizReportLinkState();
+                    updateSingleStudentReportLinkState();
                     showLoading(false);
                 }
             });
@@ -1813,6 +1479,8 @@
             if (isLoading) {
                 loadingIndicator.classList.remove('hidden');
                 controls.forEach(control => control.disabled = true);
+                document.querySelectorAll('.report-link').forEach(link => link.classList.add('disabled'));
+
             } else {
                 loadingIndicator.classList.add('hidden');
                 controls.forEach(control => {
@@ -1822,6 +1490,13 @@
                         control.disabled = false;
                     }
                 });
+                document.querySelectorAll('.report-link').forEach(link => {
+                     if (link.id !== 'reportLinkQuizAttempts' && link.id !== 'reportLinkSingleStudent') {
+                         link.classList.remove('disabled');
+                     }
+                });
+                updateQuizReportLinkState();
+                updateSingleStudentReportLinkState();
             }
         }
         
@@ -1950,7 +1625,7 @@
         }
 
         function processAndDisplayData(sourceDataIgnored) { 
-            currentPage = 1; // Resetear a la primera página cuando los filtros cambian
+            currentPage = 1; 
 
             if (!parsedDataCache || parsedDataCache.length === 0) {
                 showUserMessage("No hay datos cargados para analizar.", "warning");
@@ -1958,7 +1633,9 @@
                 quizAnalysisRow.classList.add('hidden');
                 destroyAllDashboardCharts();
                 clearDashboardStats();
-                renderLogTable([]); // Para limpiar tabla y paginación
+                renderLogTable([]); 
+                updateQuizReportLinkState();
+                updateSingleStudentReportLinkState();
                 return;
             }
             
@@ -1982,6 +1659,8 @@
                 showUserMessage("Fechas de inicio o fin inválidas.", "danger");
                 resultsSection.classList.add('hidden');
                 quizAnalysisRow.classList.add('hidden');
+                updateQuizReportLinkState();
+                updateSingleStudentReportLinkState();
                 return;
             }
             
@@ -1992,6 +1671,8 @@
                 showUserMessage("La fecha de inicio no puede ser posterior a la fecha de fin.", "danger");
                 resultsSection.classList.add('hidden');
                 quizAnalysisRow.classList.add('hidden');
+                updateQuizReportLinkState();
+                updateSingleStudentReportLinkState();
                 return;
             }
 
@@ -2039,7 +1720,10 @@
                 filteredDataForCharts = filteredDataForCharts.filter(row => selectedIPs.includes(row.IP_ADDRESS || "IP Desconocida"));
             }
 
-            allQuizAttempts = extractQuizAttempts(filteredDataForCharts);
+            allQuizAttempts = extractQuizAttempts(filteredDataForCharts); // Usar los datos ya filtrados por fecha/hora/etc.
+            updateQuizReportLinkState();
+            updateSingleStudentReportLinkState();
+
 
             if (filteredDataForCharts.length === 0 && !includeZeroActivity) {
                 showUserMessage("No hay eventos que coincidan con los filtros y exclusiones aplicadas.", "warning");
@@ -2047,7 +1731,7 @@
                 dashDateRangeEl.textContent = `${startDateVal.toLocaleDateString()} - ${endDateVal.toLocaleDateString()}`;
                 destroyAllDashboardCharts(); 
                 renderAllDashboardCharts(); 
-                renderLogTable(filteredDataForCharts); // Asegura que tabla y paginación se limpien
+                renderLogTable(filteredDataForCharts); 
                 resultsSection.classList.remove('hidden'); 
                 if(allQuizAttempts.length > 0) quizAnalysisRow.classList.remove('hidden'); else quizAnalysisRow.classList.add('hidden');
                 return;
@@ -3526,7 +3210,7 @@
             }
         }
 
-        function renderLogTable(data) { // data es filteredDataForCharts
+        function renderLogTable(data) { 
             logTableBody.innerHTML = ''; 
 
             document.querySelectorAll('#logTableSection th').forEach(th => {
@@ -3710,7 +3394,7 @@
                 sortDirection = 'asc';
             }
             
-            currentPage = 1; // Resetear a la primera página después de ordenar
+            currentPage = 1; 
             sortFilteredDataForTable(); 
             renderLogTable(filteredDataForCharts); 
         }
@@ -3764,7 +3448,7 @@
                 CSV_COLUMN_MAPPING.IP_ADDRESS 
             ];
             
-            const dataForCsv = filteredDataForCharts.map(row => [ // Se usa filteredDataForCharts (todos los datos, no solo la página)
+            const dataForCsv = filteredDataForCharts.map(row => [ 
                 row.TIME || '',
                 row.FULL_NAME || '',
                 row.EVENT_CONTEXT || '',
@@ -3924,7 +3608,90 @@
             showUserMessage(`Datos del gráfico descargados como ${filename}`, "success");
         }
 
+        function updateQuizReportLinkState() {
+            const reportLinkQuiz = document.getElementById('reportLinkQuizAttempts');
+            if (reportLinkQuiz) {
+                if (allQuizAttempts && allQuizAttempts.length > 0 && parsedDataCache.length > 0) {
+                    reportLinkQuiz.classList.remove('disabled');
+                } else {
+                    reportLinkQuiz.classList.add('disabled');
+                }
+            }
+        }
+
+        function updateSingleStudentReportLinkState() {
+            const reportLinkStudent = document.getElementById('reportLinkSingleStudent');
+            if (reportLinkStudent) {
+                const selectedUser = userFilterSelect.value;
+                if (parsedDataCache.length > 0 && selectedUser !== "ALL_USERS") {
+                    reportLinkStudent.classList.remove('disabled');
+                } else {
+                    reportLinkStudent.classList.add('disabled');
+                }
+            }
+        }
+        
+        function handleGenerateReport(reportType) {
+            if (typeof openPrintableReport !== 'function') {
+                showUserMessage("Error: La funcionalidad de generación de informes no está disponible.", "danger");
+                console.error("La función openPrintableReport no está definida. Asegúrate de que report_generator.js está cargado.");
+                return;
+            }
+
+            if (!parsedDataCache || parsedDataCache.length === 0) {
+                showUserMessage("No hay datos cargados para generar un informe.", "warning");
+                return;
+            }
+            
+            if (reportType === 'quizAttempts' && (!allQuizAttempts || allQuizAttempts.length === 0)) {
+                showUserMessage("No hay datos de intentos de cuestionario para este informe.", "info");
+                return;
+            }
+
+            let studentForReport = null;
+            if (reportType === 'singleStudent') {
+                studentForReport = userFilterSelect.value;
+                if (studentForReport === "ALL_USERS") {
+                    showUserMessage("Selecciona un alumno específico en los filtros para generar este informe.", "info");
+                    return;
+                }
+            }
+            
+            const reportData = {
+                filteredData: [...filteredDataForCharts], 
+                allQuizAttempts: [...allQuizAttempts],   
+                baseDataForZeroInclusion: [...globallyProcessedDataForBaseLists], 
+                generalStats: {
+                    dateRange: dashDateRangeEl.textContent,
+                    totalEvents: dashTotalEventsEl.textContent,
+                    uniqueUsers: dashUniqueUsersEl.textContent,
+                    activeDays: dashActiveDaysEl.textContent,
+                    avgEventsPerDay: dashAvgEventsPerDayEl.textContent,
+                    mostFrequentEventName: dashMostFrequentEventNameEl.textContent,
+                    mostFrequentComponent: dashMostFrequentComponentEl.textContent,
+                    mostActiveUser: dashMostActiveUserEl.textContent
+                },
+                filters: {
+                    startDate: startDateInput.valueAsDate ? startDateInput.valueAsDate.toLocaleDateString('es-ES') : 'N/A',
+                    endDate: endDateInput.valueAsDate ? endDateInput.valueAsDate.toLocaleDateString('es-ES') : 'N/A',
+                    startTime: startTimeFilter.value,
+                    endTime: endTimeFilter.value,
+                    user: userFilterSelect.options[userFilterSelect.selectedIndex].text,
+                    event: eventFilterSelect.options[eventFilterSelect.selectedIndex].text,
+                    component: componentFilterSelect.options[componentFilterSelect.selectedIndex].text,
+                    context: contextFilterSelect.options[contextFilterSelect.selectedIndex].text,
+                    ips: Array.from(ipFilterSelect.selectedOptions).map(opt => opt.value),
+                    includeZeroActivity: includeZeroActivitySwitch.checked
+                },
+                selectedStudentName: studentForReport, 
+                ipColumnAvailable: ipColumnAvailable,
+                csvColumnMapping: CSV_COLUMN_MAPPING, // Para el informe de logs de alumno
+                itemsPerPageForStudentLogs: 50 // Para el informe de logs de alumno
+            };
+            
+            openPrintableReport(reportType, reportData);
+        }
+
     </script>
 </body>
 </html>
-```
