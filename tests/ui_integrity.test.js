@@ -8,6 +8,7 @@ assert.equal(a,b,'Los dos HTML deben estar sincronizados');
 const ids=[...a.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
 assert.equal(new Set(ids).size,ids.length,'Los ID HTML deben ser únicos');
 assert.match(a,/id="trackingDashboard"/);
+assert.match(a,/Chart\.defaults\.font\.family = "'DM Sans', system-ui, sans-serif"/,'Los gráficos deben usar la tipografía del producto');
 assert.match(a,/id="trackingHeatmap"/);
 assert.match(a,/id="trackingContinuityTable"/);
 assert.match(a,/id="trackingProgressCanvas"/);
