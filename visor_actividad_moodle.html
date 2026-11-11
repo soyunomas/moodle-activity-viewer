@@ -2030,6 +2030,7 @@
                 renderAllDashboardCharts(); 
                 renderLogTable(filteredDataForCharts); 
                 resultsSection.classList.remove('hidden'); 
+                renderTrackingDashboard();
                 if(allQuizAttempts.length > 0) quizAnalysisRow.classList.remove('hidden'); else quizAnalysisRow.classList.add('hidden');
                 return;
             }
@@ -2072,6 +2073,7 @@
             renderLogTable(filteredDataForCharts);
 
             resultsSection.classList.remove('hidden');
+            renderTrackingDashboard();
             if(allQuizAttempts.length > 0) {
                 quizAnalysisRow.classList.remove('hidden');
             } else {
@@ -2665,7 +2667,6 @@
         }
 
         function renderAllDashboardCharts() {
-            renderTrackingDashboard();
             renderDashUserActivityChart();
             renderDashEventsOverTimeChart();
             renderDashComponentActivityChart();
