@@ -1,0 +1,1 @@
+Los gráficos mantienen DM Sans; se verifica en ui_integrity.test.js.
