@@ -8,7 +8,7 @@
 ## Orden según utilidad docente
 1. Continuidad semanal por alumno e inactividad relativa a la última fecha presente en el CSV.
 2. Perfil individual con evolución semanal.
-3. Comparación de periodos equivalentes, si el CSV incluye el periodo anterior completo.
+3. Comparación de los dos tramos consecutivos más recientes dentro de las fechas disponibles del CSV y del filtro; máximo 14 días por tramo.
 4. Mapa de calor de actividad por día y hora.
 5. Tipología de interacción (consulta, participación y otras) basada en patrones personalizables.
 6. Sesiones estimadas agrupando eventos separados hasta 30 minutos.
@@ -22,7 +22,7 @@
 - Todos los cálculos funcionan en navegador, sin enviar el CSV al servidor.
 - Ventanas de ayuda realmente accesibles y ejemplos de interpretación de cada gráfico.
 - Los indicadores no son diagnósticos educativos, y la ausencia de eventos no demuestra desinterés.
-- Periodos comparados de idéntica duración y con los mismos filtros; ocultar comparación si el CSV no cubre el anterior.
+- Periodos de idéntica duración y con los mismos filtros dentro del CSV: no exigir una exportación anterior; indicar que hacen falta al menos dos días de intervalo observable.
 - Filtrar estudiantes por cohortes del dataset y no presentar estudiantes sin registros históricos como matriculados.
 - Reordenar el resto de los gráficos por utilidad docente.
 - Sin introducir framework ni backend.

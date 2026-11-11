@@ -16,7 +16,7 @@
 ## Review Focus
 - CSV sin fechas válidas o alumnos sin nombre: comportamiento claro, sin excepción.
 - Cambios de mes o año: continuidad semanal y comparación inclusiva.
-- Periodo anterior no cubierto: indicar no comparable, no inventar descenso.
+- Comparar únicamente las ventanas consecutivas dentro de fechas disponibles del CSV; no inventar registros fuera del archivo. Con un solo día, indicar comparación no disponible.
 - Filtros de usuario, hora e IP: comparaciones aplican iguales criterios.
 - Cambios repetidos de filtro: destruir gráfico previo y no duplicar tarjetas.
 

@@ -28,6 +28,25 @@ for(const type of types){
     const help=sandbox.window.MoodleTrackingUI.helpFor(type,legacy);
     assert.ok(help && help.title && help.content.includes('Ejemplo'), 'Ayuda completa: '+type);
 }
+const comparisonTarget={innerHTML:'',textContent:''};
+const drawContext={window:{},document:{getElementById:id=>id==='trackingComparison'?comparisonTarget:null}};
+vm.runInNewContext(read('learning_analytics_ui.js'),drawContext);
+const renderComparison=drawContext.window.MoodleTrackingUI.renderComparison;
+assert.equal(typeof renderComparison,'function','La comparación debe poder probarse sin recargar la página');
+renderComparison({comparison:{
+  available:true,previousEvents:1,currentEvents:2,percentChange:100,
+  previousStart:'2026-10-06',previousEnd:'2026-10-08',
+  currentStart:'2026-10-09',currentEnd:'2026-10-11',
+  previousStudents:1,currentStudents:1,windowDays:3
+}});
+assert.match(comparisonTarget.innerHTML,/06\/10\/2026/,'mostrar el primer intervalo');
+assert.match(comparisonTarget.innerHTML,/09\/10\/2026/,'mostrar el segundo intervalo');
+assert.match(comparisonTarget.innerHTML,/11\/10\/2026/,'mostrar la última fecha disponible');
+assert.match(comparisonTarget.innerHTML,/100/,'mostrar variación calculada');
+renderComparison({comparison:{available:false,reason:'not_enough_days'}});
+assert.match(comparisonTarget.textContent,/dos días/i,'explicar que el CSV solo cubre un día');
+assert.doesNotMatch(comparisonTarget.textContent,/no cubre íntegramente el periodo anterior/i);
+assert.match(a,/hasta 14 días por tramo/i,'texto del panel de comparación actualizado');
 const readme=read('README.md');
 assert.ok(readme.indexOf('https://soyunomas.github.io/moodle-activity-viewer/')<readme.indexOf('## ✨ Características Principales'));
 assert.match(read('index.html'),/url=\.\/visor_actividad_moodle\.html/);

@@ -44,19 +44,42 @@
     const current=(currentRows||[]).filter(r=>dateOf(r));
     const history=(allRows||[]).filter(r=>dateOf(r));
     const comparable=history.filter(r=>matchesNonDate(r,o.selection));
-    const days=valid?dayNum(end)-dayNum(first)+1:0;
-    const previousStart=valid?addDays(first,-days):null,previousEnd=valid?addDays(first,-1):null;
+    const currentNames=new Set(current.map(nameOf));
     let earliest=null,latest=null;
     for(const row of history){
       const date=dateOf(row);
       if(!earliest||date<earliest)earliest=date;
       if(!latest||date>latest)latest=date;
     }
-    const coverage=!!(valid&&earliest&&latest&&dayNum(earliest)<=dayNum(previousStart)&&dayNum(latest)>=dayNum(previousEnd)&&dayNum(latest)>=dayNum(end));
-    const prior=coverage?comparable.filter(r=>{const d=dayNum(dateOf(r));return d>=dayNum(previousStart)&&d<=dayNum(previousEnd)}):[];
-    const currentNames=new Set(current.map(nameOf)),priorNames=new Set(prior.map(nameOf));
-    const percentChange=coverage&&prior.length?Math.round((current.length-prior.length)/prior.length*1000)/10:null;
-    const comparison={available:coverage,start:previousStart?dayKey(previousStart):null,end:previousEnd?dayKey(previousEnd):null,currentEvents:current.length,previousEvents:prior.length,percentChange,currentStudents:currentNames.size,previousStudents:priorNames.size};
+    // Las fechas de comparación son las observadas en el CSV y las elegidas
+    // en el filtro. No hacen falta registros fuera de esa exportación.
+    // Se usan las dos ventanas consecutivas más recientes de igual duración
+    // (máximo 14 días por ventana).
+    const observedStart=valid&&earliest?(dayNum(first)>dayNum(earliest)?first:readDay(dayKey(earliest))):null;
+    const observedEnd=valid&&latest?(dayNum(end)<dayNum(latest)?end:readDay(dayKey(latest))):null;
+    const availableDays=observedStart&&observedEnd?Math.max(0,dayNum(observedEnd)-dayNum(observedStart)+1):0;
+    const windowDays=Math.min(14,Math.floor(availableDays/2));
+    const coverage=windowDays>0;
+    const currentEnd=coverage?observedEnd:null;
+    const currentStart=coverage?addDays(currentEnd,1-windowDays):null;
+    const previousEnd=coverage?addDays(currentStart,-1):null;
+    const previousStart=coverage?addDays(previousEnd,1-windowDays):null;
+    const within=(rows,start,end)=>start&&end?rows.filter(r=>{
+      const day=dayNum(dateOf(r));return day>=dayNum(start)&&day<=dayNum(end);
+    }):[];
+    const prior=coverage?within(comparable,previousStart,previousEnd):[];
+    const recent=coverage?within(comparable,currentStart,currentEnd):[];
+    const priorNames=new Set(prior.map(nameOf)),recentNames=new Set(recent.map(nameOf));
+    const percentChange=coverage&&prior.length?Math.round((recent.length-prior.length)/prior.length*1000)/10:null;
+    const reason=!valid?'invalid_dates':!history.length||availableDays===0?'no_events':windowDays===0?'not_enough_days':null;
+    const comparison={
+      available:coverage,reason,mode:'csv_recent_windows',windowDays,
+      start:previousStart?dayKey(previousStart):null,end:previousEnd?dayKey(previousEnd):null,
+      previousStart:previousStart?dayKey(previousStart):null,previousEnd:previousEnd?dayKey(previousEnd):null,
+      currentStart:currentStart?dayKey(currentStart):null,currentEnd:currentEnd?dayKey(currentEnd):null,
+      currentEvents:recent.length,previousEvents:prior.length,percentChange,
+      currentStudents:recentNames.size,previousStudents:priorNames.size
+    };
     const weeks=[];
     if(valid){for(let w=readDay(weekStart(first)),last=readDay(weekStart(end));w<=last;w=addDays(w,7))weeks.push(dayKey(w));}
     const shownWeeks=weeks.slice(-12),heatmap=Array.from({length:7},()=>Array(24).fill(0));
