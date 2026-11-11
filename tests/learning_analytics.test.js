@@ -34,21 +34,27 @@ test('dos eventos cercanos forman una sesión, hueco largo abre otra',()=>{
   eq(a.sessions.avgMinutes,12.5,'duración estimada');
   eq(a.users[0].sessions,2,'sesiones de alumna');
 });
-test('periodos equivalentes y comparación cuando existe cobertura',()=>{
-  const all=[row('Ana','2026-09-28T08:00:00'),row('Ana','2026-10-01T08:00:00'),row('Ana','2026-10-05T08:00:00'),row('Ana','2026-10-06T08:00:00'),row('Ana','2026-10-11T08:00:00')];
-  const current=all.slice(-3);
-  const r=Analytics.compute(current,all,options());
-  yes(r.comparison.available,'comparación disponible con cobertura');
-  eq(r.comparison.previousEvents,2,'eventos previos');
-  eq(r.comparison.currentEvents,3,'eventos actuales');
-  eq(r.comparison.percentChange,50,'porcentaje');
-});
-test('periodo anterior no cubierto no se presenta como descenso',()=>{
+test('el CSV se compara consigo mismo aunque no contenga fechas anteriores al rango',()=>{
+  const all=[
+    row('Ana','2026-10-05T08:00:00'),row('Ana','2026-10-06T08:00:00'),
+    row('Ana','2026-10-09T08:00:00'),row('Ana','2026-10-11T08:00:00')
+  ];
+  const result=Analytics.compute(all,all,options());
+  eq(result.comparison.available,true,'comparable desde el CSV');
+  eq(result.comparison.previousStart,'2026-10-06','inicio primera ventana');
+  eq(result.comparison.previousEnd,'2026-10-08','fin primera ventana');
+  eq(result.comparison.currentStart,'2026-10-09','inicio segunda ventana');
+  eq(result.comparison.currentEnd,'2026-10-11','fin segunda ventana');
+  eq(result.comparison.windowDays,3,'ventanas equivalentes');
+  eq(result.comparison.previousEvents,1,'eventos en el primer tramo');
+  eq(result.comparison.currentEvents,2,'eventos en el segundo tramo');
+  eq(result.comparison.percentChange,100,'variación');
+});test('si el CSV solo contiene un día se explica la falta de comparación',()=>{
   const a=[row('Ana','2026-10-05T08:00:00')];
-  const r=Analytics.compute(a,a,options());
-  eq(r.comparison.available,false,'comparabilidad');
-});
-test('tipología configurable, nunca equivale a rendimiento',()=>{
+  const result=Analytics.compute(a,a,options());
+  eq(result.comparison.available,false,'comparabilidad');
+  eq(result.comparison.reason,'not_enough_days','motivo');
+});test('tipología configurable, nunca equivale a rendimiento',()=>{
   const a=[row('Ana','2026-10-05T08:00:00'),row('Ana','2026-10-05T09:00:00','assignment submitted','Tarea'),row('Ana','2026-10-05T10:00:00','user loggedin','Sistema')];
   const r=Analytics.compute(a,a,options());
   eq([r.composition.view,r.composition.participation,r.composition.other],[1,1,1],'tipologías');
@@ -58,13 +64,24 @@ test('cohorte basada en histórico: alumnos sin actividad en filtro aparecen',()
   const r=Analytics.compute([all[1]],all,options());
   yes(r.users.some(u=>u.name==='Ana' && u.events===0),'visibilidad sin eventos');
 });
-test('filtro de alumno, hora y componente se aplica también al periodo anterior',()=>{
-  const all=[row('Ana','2026-09-28T20:00:00'),row('Ana','2026-10-01T10:00:00'),row('Beto','2026-10-01T10:00:00'),row('Ana','2026-10-05T10:00:00'),row('Beto','2026-10-11T20:00:00')];
-  const r=Analytics.compute([all[3]],all,options({selection:{user:'Ana',event:'ALL_EVENTS',component:'Recurso',context:'ALL_CONTEXTS',ips:[],startTime:'09:00',endTime:'11:00'}}));
-  eq(r.comparison.previousEvents,1,'previos con mismos filtros');
-  eq(r.users.length,1,'solo alumna');
-});
-test('calidad de datos con descartes y filas sin identificar',()=>{
+test('ambas ventanas usan idénticos filtros de alumno y hora',()=>{
+  const all=[
+    row('Ana','2026-10-05T08:00:00'),
+    row('Ana','2026-10-07T20:00:00'),
+    row('Ana','2026-10-07T10:00:00'),
+    row('Beto','2026-10-08T10:00:00'),
+    row('Ana','2026-10-10T10:00:00'),
+    row('Beto','2026-10-11T20:00:00')
+  ];
+  const selection={user:'Ana',event:'ALL_EVENTS',component:'Recurso',context:'ALL_CONTEXTS',ips:[],startTime:'09:00',endTime:'11:00'};
+  const current=[all[2],all[4]];
+  const r=Analytics.compute(current,all,options({selection}));
+  eq(r.comparison.previousEvents,1,'primer tramo con filtros');
+  eq(r.comparison.currentEvents,1,'segundo tramo con filtros');
+  eq(r.comparison.percentChange,0,'variación con los filtros');
+  eq(r.comparison.previousStudents,1,'primer tramo alumnos');
+  eq(r.comparison.currentStudents,1,'segundo tramo alumnos');
+});test('calidad de datos con descartes y filas sin identificar',()=>{
   const a=[row('Ana','2026-10-05T10:00:00')];
   const r=Analytics.compute(a,a,options({quality:{raw:7,processed:5,missingColumns:['Descripción'],unknownUsers:2}}));
   eq(r.quality.discarded,2,'descartados');
@@ -82,9 +99,46 @@ test('archivo vacío: sin divisiones por cero ni fechas inválidas',()=>{
   eq(r.comparison.available,false,'sin comparación');
   eq(r.users.length,0,'sin estudiantes');
 });
-test('no compara cuando el periodo actual termina después de la última fecha del CSV',()=>{
-  const logs=[row('Ana','2026-09-28T08:00:00'),row('Ana','2026-10-07T08:00:00')];
-  const result=Analytics.compute([logs[1]],logs,options());
-  eq(result.comparison.available,false,'periodo actual incompleto');
+test('usa la última fecha disponible aunque el filtro termine después',()=>{
+  const logs=[
+    row('Ana','2026-10-05T08:00:00'),
+    row('Ana','2026-10-06T08:00:00'),
+    row('Ana','2026-10-07T08:00:00')
+  ];
+  const r=Analytics.compute(logs,logs,options());
+  eq(r.comparison.available,true,'comparación disponible');
+  eq(r.comparison.currentEnd,'2026-10-07','fin real en el CSV');
+  eq(r.comparison.previousStart,'2026-10-06','primera mitad');
+  eq(r.comparison.previousEvents,1,'eventos de mitad previa');
+  eq(r.comparison.currentEvents,1,'eventos de mitad reciente');
+});test('máximo 14 días por tramo para un seguimiento reciente',()=>{
+  const all=[
+    row('Ana','2026-10-01T08:00:00'),
+    row('Ana','2026-10-08T08:00:00'),
+    row('Ana','2026-10-15T08:00:00'),
+    row('Ana','2026-10-30T08:00:00')
+  ];
+  const r=Analytics.compute(all,all,options({start:'2026-10-01',end:'2026-10-30',asOf:'2026-10-30'}));
+  eq(r.comparison.windowDays,14,'14 días');
+  eq(r.comparison.previousStart,'2026-10-03','inicio anterior');
+  eq(r.comparison.currentStart,'2026-10-17','inicio reciente');
+  eq(r.comparison.currentEnd,'2026-10-30','fin reciente');
+  eq(r.comparison.previousEvents,2,'eventos anteriores');
+  eq(r.comparison.currentEvents,1,'eventos recientes');
+  eq(r.comparison.percentChange,-50,'variación');
 });
-console.log('11 pruebas correctas');
+test('si los filtros dejan una ventana a cero, se sigue pudiendo comparar',()=>{
+  const all=[
+    row('Beto','2026-10-05T08:00:00'),
+    row('Ana','2026-10-07T08:00:00'),
+    row('Beto','2026-10-11T08:00:00')
+  ];
+  const r=Analytics.compute([all[1]],all,options({selection:{
+    user:'Ana',event:'ALL_EVENTS',component:'ALL_COMPONENTS',context:'ALL_CONTEXTS',ips:[],startTime:'00:00',endTime:'23:59'
+  }}));
+  eq(r.comparison.available,true,'si una ventana no tiene eventos sigue siendo comparable');
+  eq(r.comparison.previousEvents,1,'primer tramo');
+  eq(r.comparison.currentEvents,0,'segundo tramo');
+  eq(r.comparison.percentChange,-100,'bajada de eventos');
+});
+console.log('13 pruebas correctas');
