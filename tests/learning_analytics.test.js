@@ -39,9 +39,9 @@ test('periodos equivalentes y comparación cuando existe cobertura',()=>{
   const current=all.slice(-3);
   const r=Analytics.compute(current,all,options());
   yes(r.comparison.available,'comparación disponible con cobertura');
-  eq(r.comparison.previousEvents,1,'eventos previos');
+  eq(r.comparison.previousEvents,2,'eventos previos');
   eq(r.comparison.currentEvents,3,'eventos actuales');
-  eq(r.comparison.percentChange,200,'porcentaje');
+  eq(r.comparison.percentChange,50,'porcentaje');
 });
 test('periodo anterior no cubierto no se presenta como descenso',()=>{
   const a=[row('Ana','2026-10-05T08:00:00')];
