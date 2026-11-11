@@ -24,9 +24,9 @@
     ],
     trackingComparison:[
       'Comparación entre periodos',
-      'Contrasta dos intervalos consecutivos con igual número de días, aplicando los mismos filtros de alumno, horario, evento, componente e IP.',
-      'Si suben los accesos tras publicar un tema, comprueba en qué contextos y en qué días se produjo el cambio.',
-      'No se muestra comparación si la exportación no cubre íntegramente el periodo anterior. Si el periodo previo tuvo 0 eventos, no se calcula un porcentaje.'
+      'Compara los dos tramos consecutivos más recientes que caben dentro de las fechas del CSV y del filtro, con la misma duración (hasta 14 días por tramo) y los mismos filtros de alumno, evento, componente, contexto, hora e IP.',
+      'Si el CSV llega del 1 al 30 de octubre, compara del 3 al 16 con el 17 al 30. Una subida puede indicar mayor uso, que conviene contrastar con las fechas de las actividades.',
+      'Basta el CSV cargado, sin histórico anterior. Solo se necesitan al menos dos días de intervalo entre sus fechas extremas. Un cero indica que no hay eventos correspondientes en ese tramo del archivo, no que el alumno no haya trabajado. Si la primera ventana tiene cero eventos, no se calcula el porcentaje.'
     ],
     trackingHeatmap:[
       'Mapa de calor: día de la semana y hora',
@@ -149,9 +149,22 @@
   function comparison(data){
     const el=byId('trackingComparison');if(!el)return;
     const c=data.comparison;
-    if(!c.available){el.textContent='Sin comparación: la exportación no cubre íntegramente el periodo anterior de igual duración.';return;}
-    const diff=c.percentChange===null?'No calculable desde 0 eventos previos':(c.percentChange>0?'+':'')+c.percentChange+' %';
-    el.innerHTML='<p class="tracking-kpi"><strong>'+c.currentEvents+'</strong> eventos actuales</p><p>'+c.previousEvents+' eventos del '+esc(dateLabel(c.start))+' al '+esc(dateLabel(c.end))+'</p><p class="tracking-delta">Variación: '+esc(diff)+' · Alumnos con registros: '+c.currentStudents+' frente a '+c.previousStudents+'</p>';
+    if(!c.available){
+      el.innerHTML='';
+      el.textContent=c.reason==='not_enough_days'
+        ? 'Para comparar se necesitan registros que abarquen al menos dos días distintos dentro del intervalo seleccionado.'
+        : c.reason==='invalid_dates'
+          ? 'Revisa las fechas de inicio y fin del filtro.'
+          : 'El CSV no contiene registros dentro del intervalo seleccionado para comparar dos tramos.';
+      return;
+    }
+    const diff=c.percentChange===null?'No calculable: 0 eventos en el tramo anterior':(c.percentChange>0?'+':'')+c.percentChange+' %';
+    const previousStart=c.previousStart||c.start,previousEnd=c.previousEnd||c.end;
+    el.innerHTML='<p class="tracking-kpi"><strong>'+c.currentEvents+'</strong> eventos en el tramo reciente</p>'+
+      '<p><strong>Tramo anterior:</strong> '+esc(dateLabel(previousStart))+' – '+esc(dateLabel(previousEnd))+' · '+c.previousEvents+' eventos</p>'+
+      '<p><strong>Tramo reciente:</strong> '+esc(dateLabel(c.currentStart))+' – '+esc(dateLabel(c.currentEnd))+' · '+c.currentEvents+' eventos</p>'+
+      '<p class="tracking-delta">Variación: '+esc(diff)+' · Alumnos con eventos: '+c.currentStudents+' frente a '+c.previousStudents+' · '+c.windowDays+' días por tramo</p>'+
+      '<p class="tracking-note">Solo se utilizan registros del CSV seleccionado. Los días sin eventos en el archivo no prueban ausencia de actividad fuera de Moodle.</p>';
   }
   function anomalies(data){
     const el=byId('trackingAnomalies');if(!el)return;
@@ -204,5 +217,5 @@
     });
     reorder();
   }
-  root.MoodleTrackingUI={init,render,helpFor};
+  root.MoodleTrackingUI={init,render,helpFor,renderComparison:comparison};
 })(typeof window!=='undefined'?window:globalThis);
