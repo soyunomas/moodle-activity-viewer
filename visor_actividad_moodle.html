@@ -6,6 +6,7 @@
     <title>Visor de Actividad Moodle</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     
@@ -185,6 +186,147 @@
                  width: 100%;
             }
         }
+
+        /* Controles compactos: el contenido del análisis tiene prioridad visual. */
+        body {
+            background: #F4F3EF;
+            color: #18181B;
+            font-family: "DM Sans", system-ui, sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6, .navbar-brand, .offcanvas-title {
+            font-family: "Space Grotesk", "DM Sans", sans-serif;
+            letter-spacing: -.025em;
+        }
+        .navbar.bg-dark { background-color: #18181B !important; }
+        .sticky-controls {
+            position: sticky;
+            top: 56px;
+            z-index: 1020;
+            background: #F4F3EF;
+            border-bottom: 1px solid #d8d7d0;
+        }
+        .analysis-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .65rem;
+            padding: .65rem .25rem;
+        }
+        .toolbar-file {
+            display: flex;
+            align-items: center;
+            flex: 1 1 330px;
+            min-width: 230px;
+            gap: .6rem;
+        }
+        .toolbar-label {
+            flex: 0 0 auto;
+            margin: 0;
+            color: #5d605b;
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .toolbar-file .form-control {
+            min-width: 0;
+            max-width: 340px;
+            background: #FAF9F6;
+            font-size: .8rem;
+        }
+        .analysis-toolbar .btn {
+            flex: 0 0 auto;
+            border-radius: .3rem;
+            padding: .4rem .85rem;
+            font-size: .82rem;
+            font-weight: 600;
+        }
+        .btn-primary {
+            --bs-btn-color: #FAF9F6;
+            --bs-btn-bg: #1B4332;
+            --bs-btn-border-color: #1B4332;
+            --bs-btn-hover-color: #FAF9F6;
+            --bs-btn-hover-bg: #143225;
+            --bs-btn-hover-border-color: #143225;
+            --bs-btn-active-bg: #143225;
+            --bs-btn-active-border-color: #143225;
+            --bs-btn-disabled-bg: #1B4332;
+            --bs-btn-disabled-border-color: #1B4332;
+        }
+        .filter-count {
+            margin-left: .35rem;
+            padding: .08rem .4rem;
+            border-radius: .25rem;
+            background: #E4E9E4;
+            color: #1B4332;
+            font-size: .72rem;
+        }
+        .filter-count[hidden] { display: none !important; }
+        .toolbar-summary {
+            min-width: 0;
+            max-width: 340px;
+            margin-left: auto;
+            overflow: hidden;
+            color: #5b605a;
+            font-size: .77rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #statusMessage { margin: .2rem 0 .45rem !important; padding: 0 !important; border: none !important; font-size: .8rem; }
+        #statusMessage:empty { display: none; }
+        .filters-panel {
+            --bs-offcanvas-width: min(440px, 100vw);
+            background: #FAF9F6;
+            color: #18181B;
+        }
+        .filters-panel .offcanvas-header {
+            align-items: flex-start;
+            padding: 1.4rem 1.5rem .8rem;
+            border-bottom: 1px solid #deded8;
+        }
+        .filters-panel .offcanvas-title { font-size: 1.35rem; font-weight: 600; }
+        .filters-panel .offcanvas-body { padding: .85rem 1.5rem 1.5rem; }
+        .filters-intro { font-size: .82rem; color: #646760; margin-bottom: 1.25rem; }
+        .filter-section { padding-top: 1rem; margin-bottom: 1.25rem; border-top: 1px solid #deded8; }
+        .filter-section-title {
+            margin-bottom: .75rem;
+            color: #1B4332;
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+        .filters-panel .form-label { margin-bottom: .25rem; font-size: .77rem; font-weight: 600; }
+        .filters-panel .form-control, .filters-panel .form-select {
+            background-color: #FAF9F6;
+            border-color: #d4d5cc;
+            border-radius: .3rem;
+            font-size: .84rem;
+            min-height: 2.1rem;
+        }
+        .filters-panel .form-control:focus, .filters-panel .form-select:focus {
+            border-color: #1B4332;
+            box-shadow: 0 0 0 .15rem rgba(27,67,50,.12);
+        }
+        .filters-panel #ipFilter { min-height: 6.5rem; }
+        .filters-panel .form-text { font-size: .73rem; }
+        .filters-panel .form-check-label { font-size: .82rem; }
+        .filters-panel .form-check-input:checked { background-color: #1B4332; border-color: #1B4332; }
+        .filters-panel .offcanvas-footer {
+            padding: .85rem 1.5rem;
+            border-top: 1px solid #deded8;
+        }
+        .filters-panel .offcanvas-footer .btn { width: 100%; }
+        .chart-card:hover { border-color: #1B4332; }
+        @media (max-width: 767.98px) {
+            .analysis-toolbar { gap: .5rem; }
+            .toolbar-file { flex-basis: 100%; }
+            .toolbar-file .form-control { max-width: none; }
+            .toolbar-summary { flex: 1 1 100%; max-width: none; margin-left: 0; }
+            .filters-panel .offcanvas-header { padding: 1rem 1.1rem .75rem; }
+            .filters-panel .offcanvas-body { padding: .75rem 1.1rem; }
+            .filters-panel .offcanvas-footer { padding: .75rem 1.1rem; }
+        }
     </style>
 </head>
 <body>
@@ -223,91 +365,97 @@
         </div>
     </nav>
 
-    <div class="container-fluid px-md-4 pt-4">
+    <div class="container-fluid px-md-4 pt-2">
         <div class="sticky-controls">
-            <div class="card">
-                <div class="accordion" id="analysisControlsAccordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="controlsAccordionHeader">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseControls" aria-expanded="true" aria-controls="collapseControls">
-                                Configuración de Análisis y Filtros
-                            </button>
-                        </h2>
-                        <div id="collapseControls" class="accordion-collapse collapse show" aria-labelledby="controlsAccordionHeader" data-bs-parent="#analysisControlsAccordion">
-                            <div class="accordion-body">
-                                <div class="row g-3 align-items-end">
-                                    <div class="col-md-12 mb-3">
-                                        <label for="csvFile" class="form-label fw-bold">1. Selecciona el archivo CSV:</label>
-                                        <input class="form-control" type="file" id="csvFile" accept=".csv">
-                                    </div>
-                                    <div class="col-md-12 d-grid mb-3">
-                                        <button id="analyzeButton" class="btn btn-primary btn-lg">Analizar Logs</button>
-                                    </div>                                    
-                                    <div class="col-md-12 filter-group mb-3">
-                                        <p class="form-label fw-bold mb-1">2. Filtros de Análisis:</p>
-                                        <div class="form-check form-switch mb-2">
-                                            <input class="form-check-input" type="checkbox" role="switch" id="includeZeroActivitySwitch">
-                                            <label class="form-check-label" for="includeZeroActivitySwitch">Incluir ítems con 0 actividad en rankings</label>
-                                        </div>
-                                        <div class="filters-scroll-area">
-                                            <div class="row g-2">
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="startDate" class="form-label">Fecha Inicio:</label>
-                                                    <input type="date" class="form-control form-control-sm" id="startDate">
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="endDate" class="form-label">Fecha Fin:</label>
-                                                    <input type="date" class="form-control form-control-sm" id="endDate">
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="startTimeFilter" class="form-label">Hora Inicio:</label>
-                                                    <input type="time" class="form-control form-control-sm" id="startTimeFilter" value="00:00">
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="endTimeFilter" class="form-label">Hora Fin:</label>
-                                                    <input type="time" class="form-control form-control-sm" id="endTimeFilter" value="23:59">
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="userFilter" class="form-label">Alumno:</label>
-                                                    <select id="userFilter" class="form-select form-select-sm">
-                                                        <option value="ALL_USERS">Todos los Alumnos</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="eventFilter" class="form-label">Nombre Evento:</label>
-                                                    <select id="eventFilter" class="form-select form-select-sm">
-                                                        <option value="ALL_EVENTS">Todos los Eventos</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="row g-2 mt-2">
-                                                <div class="col-md-4">
-                                                    <label for="componentFilter" class="form-label">Componente:</label>
-                                                    <select id="componentFilter" class="form-select form-select-sm">
-                                                        <option value="ALL_COMPONENTS">Todos los Componentes</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <label for="contextFilter" class="form-label">Contexto Evento:</label>
-                                                    <select id="contextFilter" class="form-select form-select-sm">
-                                                        <option value="ALL_CONTEXTS">Todos los Contextos</option>
-                                                    </select>
-                                                </div>
-                                                 <div class="col-md-4">
-                                                    <label for="ipFilter" class="form-label">Dirección IP:</label>
-                                                    <select id="ipFilter" class="form-select form-select-sm" multiple size="3">
-                                                    </select>
-                                                    <div class="form-text" id="ipFilterHelp">Seleccione una o más IPs. Ninguna selección implica todas.</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id="statusMessage" class="mt-3 pt-2 border-top"></div>
-                            </div>
+            <div class="analysis-toolbar" role="region" aria-label="Controles de análisis">
+                <div class="toolbar-file">
+                    <label class="toolbar-label" for="csvFile">Archivo CSV</label>
+                    <input class="form-control form-control-sm" type="file" id="csvFile" accept=".csv">
+                </div>
+                <button id="analyzeButton" type="button" class="btn btn-primary btn-sm">Analizar</button>
+                <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="offcanvas" data-bs-target="#filtersPanel" aria-controls="filtersPanel">
+                    Filtros <span class="filter-count" id="activeFilterCount" hidden>0</span>
+                </button>
+                <span class="toolbar-summary" id="filterSummary" role="status" aria-live="polite">Sin filtros adicionales</span>
+            </div>
+        </div>
+        <div id="statusMessage" role="status" aria-live="polite"></div>
+
+        <div class="offcanvas offcanvas-end filters-panel" tabindex="-1" id="filtersPanel" aria-labelledby="filtersPanelLabel">
+            <div class="offcanvas-header">
+                <div>
+                    <div class="toolbar-label mb-2">Ajustes del análisis</div>
+                    <h2 class="offcanvas-title" id="filtersPanelLabel">Filtros</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar filtros"></button>
+            </div>
+            <div class="offcanvas-body">
+                <p class="filters-intro">Al cambiar un filtro, los resultados se actualizan automáticamente tras analizar el CSV.</p>
+                <section class="filter-section" aria-labelledby="filterPeriodTitle">
+                    <h3 class="filter-section-title" id="filterPeriodTitle">Periodo</h3>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label for="startDate" class="form-label">Fecha de inicio</label>
+                            <input type="date" class="form-control form-control-sm" id="startDate">
+                        </div>
+                        <div class="col-6">
+                            <label for="endDate" class="form-label">Fecha de fin</label>
+                            <input type="date" class="form-control form-control-sm" id="endDate">
+                        </div>
+                        <div class="col-6">
+                            <label for="startTimeFilter" class="form-label">Hora de inicio</label>
+                            <input type="time" class="form-control form-control-sm" id="startTimeFilter" value="00:00">
+                        </div>
+                        <div class="col-6">
+                            <label for="endTimeFilter" class="form-label">Hora de fin</label>
+                            <input type="time" class="form-control form-control-sm" id="endTimeFilter" value="23:59">
                         </div>
                     </div>
-                </div>
+                </section>
+                <section class="filter-section" aria-labelledby="filterActivityTitle">
+                    <h3 class="filter-section-title" id="filterActivityTitle">Actividad</h3>
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label for="userFilter" class="form-label">Alumno</label>
+                            <select id="userFilter" class="form-select form-select-sm">
+                                <option value="ALL_USERS">Todos los alumnos</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="eventFilter" class="form-label">Nombre del evento</label>
+                            <select id="eventFilter" class="form-select form-select-sm">
+                                <option value="ALL_EVENTS">Todos los eventos</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="componentFilter" class="form-label">Componente</label>
+                            <select id="componentFilter" class="form-select form-select-sm">
+                                <option value="ALL_COMPONENTS">Todos los componentes</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="contextFilter" class="form-label">Contexto del evento</label>
+                            <select id="contextFilter" class="form-select form-select-sm">
+                                <option value="ALL_CONTEXTS">Todos los contextos</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="ipFilter" class="form-label">Dirección IP (selección múltiple)</label>
+                            <select id="ipFilter" class="form-select form-select-sm" multiple size="4" aria-describedby="ipFilterHelp"></select>
+                            <div class="form-text" id="ipFilterHelp">Sin selección se incluyen todas las IP.</div>
+                        </div>
+                    </div>
+                </section>
+                <section class="filter-section" aria-labelledby="filterDisplayTitle">
+                    <h3 class="filter-section-title" id="filterDisplayTitle">Visualización</h3>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="includeZeroActivitySwitch">
+                        <label class="form-check-label" for="includeZeroActivitySwitch">Incluir elementos con 0 actividad en los rankings</label>
+                    </div>
+                </section>
+            </div>
+            <div class="offcanvas-footer">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="offcanvas">Ver resultados</button>
             </div>
         </div>
 
@@ -744,6 +892,7 @@
         let areFiltersPopulated = false;
         let ipColumnAvailable = false;
         let includeZeroActivity = false;
+        let initialFilterDates = null;
         
         let excludedUserSubstrings = []; 
         let excludedComponentSubstrings = [];
@@ -809,6 +958,8 @@
         const ipFilterSelect = document.getElementById('ipFilter');
         const ipFilterHelpText = document.getElementById('ipFilterHelp');
         const analyzeButton = document.getElementById('analyzeButton');
+        const activeFilterCountEl = document.getElementById('activeFilterCount');
+        const filterSummaryEl = document.getElementById('filterSummary');
         const statusMessage = document.getElementById('statusMessage');
         const resultsSection = document.getElementById('resultsSection');
         const loadingIndicator = document.getElementById('loadingIndicator');
@@ -925,10 +1076,42 @@
         }
 
 
+
+        function updateFilterSummary() {
+            const specificFilters = [
+                userFilterSelect.value !== 'ALL_USERS',
+                eventFilterSelect.value !== 'ALL_EVENTS',
+                componentFilterSelect.value !== 'ALL_COMPONENTS',
+                contextFilterSelect.value !== 'ALL_CONTEXTS',
+                ipFilterSelect.selectedOptions.length > 0,
+                startTimeFilter.value !== '00:00' || endTimeFilter.value !== '23:59',
+                includeZeroActivitySwitch.checked,
+                initialFilterDates !== null && (
+                    startDateInput.value !== initialFilterDates.start ||
+                    endDateInput.value !== initialFilterDates.end
+                )
+            ];
+            const count = specificFilters.filter(Boolean).length;
+            activeFilterCountEl.textContent = String(count);
+            activeFilterCountEl.hidden = count === 0;
+            const formatDate = value => {
+                const parts = value.split('-');
+                return parts.length === 3 ? [parts[2], parts[1], parts[0]].join('/') : value;
+            };
+            const period = startDateInput.value && endDateInput.value
+                ? formatDate(startDateInput.value) + ' – ' + formatDate(endDateInput.value)
+                : 'Fechas sin definir';
+            const detail = count === 0 ? 'sin filtros adicionales' : count + (count === 1 ? ' filtro activo' : ' filtros activos');
+            filterSummaryEl.textContent = parsedDataCache.length > 0 ? 'Periodo ' + period + ' · ' + detail : 'Selecciona un CSV para empezar';
+            filterSummaryEl.title = filterSummaryEl.textContent;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             setDefaultDates();
             setDefaultTimes();
-            loadSettings(); 
+            loadSettings();
+            updateFilterSummary();
+            document.getElementById('filtersPanel').addEventListener('change', updateFilterSummary); 
             
             analyzeButton.addEventListener('click', handleAnalysisRequest);
             csvFileInput.addEventListener('change', handleFileSelectionChange);
@@ -1082,6 +1265,7 @@
                 filteredDataForCharts = [];
                 allQuizAttempts = [];
                 areFiltersPopulated = false; 
+                initialFilterDates = null;
                 ipColumnAvailable = false;
                 minDateFromLog = null; 
                 maxDateFromLog = null;
@@ -1102,6 +1286,7 @@
                 statusMessage.textContent = 'Ningún archivo seleccionado.';
                 statusMessage.className = 'mt-3 pt-2 border-top text-muted';
             }
+            updateFilterSummary();
         }
         
         function processExclusionText(text) {
@@ -1374,6 +1559,7 @@
                          minDateFromLog = null; maxDateFromLog = null; setDefaultDates(); 
                     }
 
+                    initialFilterDates = { start: startDateInput.value, end: endDateInput.value };
                     globallyProcessedDataForBaseLists = applyGlobalExclusions(parsedDataCache);
 
                     const originalHeaders = results.meta.fields; 
@@ -1644,6 +1830,7 @@
             if (!areFiltersPopulated) { 
                 populateFilterSelects(dataToProcessAfterGlobalExclusions); 
             }
+            updateFilterSummary();
 
             const startDateVal = startDateInput.valueAsDate;
             const endDateVal = endDateInput.valueAsDate;
