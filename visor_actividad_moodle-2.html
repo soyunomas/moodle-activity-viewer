@@ -12,6 +12,8 @@
     
     <script src="help_content.js"></script> 
     <script src="report_generator.js"></script>
+    <script src="learning_analytics.js"></script>
+    <script src="learning_analytics_ui.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -328,6 +330,80 @@
             .filters-panel .offcanvas-body { padding: .75rem 1.1rem; }
             .filters-panel .offcanvas-footer { padding: .75rem 1.1rem; }
         }
+
+        /* Capa de seguimiento docente: editorial, legible y sin decoración innecesaria. */
+        .tracking-dashboard { margin-bottom: 2rem; color: #18181B; }
+        .tracking-eyebrow { color: #1B4332; font-size: .7rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+        .tracking-heading { margin: .4rem 0; font-size: clamp(1.45rem, 3vw, 2.1rem); line-height: 1.12; }
+        .tracking-caption { max-width: 790px; font-size: .85rem; color: #53584F; }
+        .tracking-topline { border-bottom: 1px solid #D6D8CF; padding: 1.1rem 0 .8rem; }
+        .tracking-summary {
+            display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+            gap: 0; margin: .8rem 0 1.25rem; border-block: 1px solid #D6D8CF;
+        }
+        .tracking-summary-item { padding: 1rem 1.25rem; border-right: 1px solid #D6D8CF; }
+        .tracking-summary-item:first-child { padding-left: 0; }
+        .tracking-summary-item:last-child { border-right: 0; }
+        .tracking-summary-item strong { display: block; color: #1B4332; font-size: clamp(1.45rem, 2.1vw, 2rem); line-height: 1.1; font-family: "Space Grotesk", sans-serif; }
+        .tracking-summary-item span { display: block; margin-top: .3rem; color: #53584F; font-size: .77rem; }
+        .tracking-section-heading { margin: 1.6rem 0 .9rem; padding: 0 0 .5rem; border-bottom: 1px solid #d9dad2; font-size: 1.13rem; }
+        .tracking-panel {
+            height: 100%; border: 1px solid #D8D9D0; border-radius: .4rem;
+            background: #FAF9F6; padding: 1.1rem 1.15rem;
+        }
+        .tracking-panel-head { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+        .tracking-panel-head h3 { margin: 0 0 .45rem; font-size: 1rem; }
+        .tracking-panel-head .help-button {
+            border: 1px solid #b8bcb1; color: #1B4332;
+            border-radius: .2rem !important; width: 1.8rem; height: 1.8rem; padding: 0;
+            display: inline-grid; place-items: center; flex: none;
+        }
+        .tracking-panel > p { margin: .45rem 0 .85rem; color: #5D6059; font-size: .78rem; }
+        .tracking-note { color: #62665F; font-size: .72rem; margin: .6rem 0 0; }
+        .tracking-table-wrap { max-height: 440px; overflow: auto; border-top: 1px solid #E3E3DE; }
+        .tracking-table { width: 100%; min-width: 560px; border-collapse: separate; border-spacing: 0; font-size: .75rem; }
+        .tracking-table th, .tracking-table td { padding: .4rem .35rem; text-align: center; border-bottom: 1px solid #E7E8E0; white-space: nowrap; }
+        .tracking-table thead th { position: sticky; top: 0; z-index: 2; background: #FAF9F6; font-weight: 600; }
+        .tracking-table .tracking-person { position: sticky; left: 0; z-index: 1; min-width: 125px; max-width: 180px; text-align: left; white-space: normal; background: #FAF9F6; }
+        .tracking-table thead .tracking-person { z-index: 3; }
+        .tracking-person-link { border: none; background: transparent; padding: 0; color: #1B4332; font-weight: 600; text-align: left; text-decoration: underline; text-underline-offset: 2px; }
+        .tracking-week { display: inline-block; min-width: 25px; padding: .2rem .25rem; background: #ECEDE7; border-radius: .2rem; }
+        .tracking-week.is-active { color: #FAF9F6; background: #1B4332; }
+        .tracking-review { color: #964600; font-weight: 700; }
+        .tracking-profile-select { width: 100%; max-width: 330px; margin: .35rem 0; font-size: .85rem; }
+        .tracking-chart-wrap { position: relative; height: 230px; }
+        .tracking-heat-scroll { overflow-x: auto; }
+        .tracking-heat-grid {
+            display: grid; grid-template-columns: 34px repeat(24,minmax(16px,1fr));
+            gap: 3px; min-width: 545px; align-items: center;
+        }
+        .tracking-heat-label { color: #61655D; text-align: center; font-size: .63rem; }
+        .tracking-heat-cell { display: block; height: 22px; border-radius: 1px; }
+        .heat-0 { background: #EBECE6; }
+        .heat-1 { background: #CDDCCF; }
+        .heat-2 { background: #8AB39A; }
+        .heat-3 { background: #4E8766; }
+        .heat-4 { background: #1B4332; }
+        .tracking-kpi strong { font-size: 2rem; color: #1B4332; }
+        .tracking-delta { color: #1B4332; font-weight: 600; }
+        .tracking-stacked { display: flex; height: 18px; overflow: hidden; border-radius: 2px; background: #EBECE6; }
+        .tracking-stack-view { background: #1B4332; }
+        .tracking-stack-participation { background: #6E927A; }
+        .tracking-stack-other { background: #BEC9B9; }
+        .tracking-legend { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .8rem; font-size: .75rem; }
+        .tracking-swatch { display: inline-block; width: 9px; height: 9px; margin-right: .35rem; }
+        .tracking-alert-list { margin: .5rem 0; padding-left: 1.1rem; font-size: .8rem; }
+        .tracking-alert-list li { padding: .25rem 0; }
+        .tracking-panel .form-label { font-size: .8rem; }
+        .tracking-panel .help-button:focus-visible, .tracking-person-link:focus-visible { outline: 2px solid #1B4332; outline-offset: 3px; }
+        @media (max-width: 767.98px) {
+            .tracking-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .tracking-summary-item { padding: .75rem; border-bottom: 1px solid #D6D8CF; }
+            .tracking-summary-item:nth-child(2) { border-right: 0; }
+            .tracking-summary-item:nth-child(n+3) { border-bottom: 0; }
+            .tracking-summary-item:nth-child(3) { padding-left: 0; }
+            .tracking-panel { padding: .85rem; }
+        }
     </style>
 </head>
 <body>
@@ -468,13 +544,31 @@
         </div>
         
         <main id="resultsSection" class="hidden">
-            <div class="container-fluid px-0"> 
+            <div class="container-fluid px-0">
+
+                <section id="trackingDashboard" class="tracking-dashboard" aria-label="Seguimiento del alumnado">
+                    <div class="tracking-topline">
+                        <span class="tracking-eyebrow">Seguimiento docente · Durante el curso</span>
+                        <h1 class="tracking-heading">Continuidad, cambios y contexto</h1>
+                        <p class="tracking-caption">Los registros ayudan a detectar cambios en el uso de Moodle. No son una medida de aprendizaje ni prueban falta de interés. Todas las fechas se interpretan respecto al CSV.</p>
+                        <p id="trackingAsOf" class="tracking-note" aria-live="polite"></p>
+                    </div>
+                    <div class="tracking-summary">
+                        <div class="tracking-summary-item"><strong id="trackingKpiStudents">—</strong><span>Alumnos detectados en el CSV filtrable</span></div>
+                        <div class="tracking-summary-item"><strong id="trackingKpiGaps">—</strong><span>Con 7 días o más sin eventos</span></div>
+                        <div class="tracking-summary-item"><strong id="trackingKpiMissing">—</strong><span>Sin eventos en el periodo</span></div>
+                        <div class="tracking-summary-item"><strong id="trackingKpiSessions">—</strong><span>Sesiones estimadas</span></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>01 · Continuidad semanal</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingContinuity" aria-label="Ayuda: trackingContinuity" title="Qué muestra y cómo interpretarlo">?</button></div><p>Pulsa en el nombre para consultar su evolución. Se muestran las últimas 12 semanas del intervalo.</p><div class="tracking-table-wrap"><table class="tracking-table" id="trackingContinuityTable" aria-label="Continuidad semanal por alumno"></table></div><p class="tracking-note">Los días sin eventos se calculan hasta el último día observado en el CSV, limitado por el filtro de fechas.</p></article></div><div class="col-xl-5" id="trackingProfile"><article class="tracking-panel"><div class="tracking-panel-head"><h3>02 · Evolución individual</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingProgress" aria-label="Ayuda: trackingProgress" title="Qué muestra y cómo interpretarlo">?</button></div><p>Cómo cambia la actividad semanal de un alumno durante el curso.</p><label class="form-label" for="trackingStudentSelect">Alumno/a</label><select id="trackingStudentSelect" class="form-select form-select-sm tracking-profile-select"></select><p class="tracking-note" id="trackingStudentMeta"></p><div class="tracking-chart-wrap"><canvas id="trackingProgressCanvas" role="img" aria-label="Eventos semanales del alumno seleccionado"></canvas></div></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>03 · Periodo frente al anterior</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingComparison" aria-label="Ayuda: trackingComparison" title="Qué muestra y cómo interpretarlo">?</button></div><p>Mismos filtros y tramos de idéntica duración. No se estima actividad que falte en el archivo.</p><div id="trackingComparison" class="tracking-comparison"></div></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>04 · Mapa de calor · Día y hora</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingHeatmap" aria-label="Ayuda: trackingHeatmap" title="Qué muestra y cómo interpretarlo">?</button></div><p>Cuándo se producen más eventos en el conjunto filtrado.</p><div id="trackingHeatmap" class="tracking-heat-scroll"></div></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>05 · Tipos de interacción</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingActivityMix" aria-label="Ayuda: trackingActivityMix" title="Qué muestra y cómo interpretarlo">?</button></div><p>Consulta, participación y otras acciones según patrones configurables.</p><div id="trackingComposition"></div><p class="tracking-note">Clasificación aproximada por nombre de evento; ajusta patrones desde Configuración.</p></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>06 · Sesiones aproximadas</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingSessions" aria-label="Ayuda: trackingSessions" title="Qué muestra y cómo interpretarlo">?</button></div><p>Una pausa superior a 30 minutos inicia una sesión nueva.</p><p id="trackingSessions"></p><p class="tracking-note">La duración solo mide el intervalo entre eventos.</p></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>07 · Concentraciones para revisar</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingAnomalies" aria-label="Ayuda: trackingAnomalies" title="Qué muestra y cómo interpretarlo">?</button></div><p>Señales descriptivas de actividad especialmente concentrada por hora; no son acusaciones.</p><div id="trackingAnomalies"></div></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>08 · Calidad del CSV</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingQuality" aria-label="Ayuda: trackingQuality" title="Qué muestra y cómo interpretarlo">?</button></div><p>Comprueba si la exportación permite interpretar los datos.</p><p id="trackingQuality"></p></article></div></div>
+                </section>
+ 
                 <div class="row mb-3 g-3">
                     <div class="col-xl-3 col-md-6">
                         <div class="card h-100">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Estadísticas Generales</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="generalStats" title="Ayuda sobre Estadísticas Generales">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="generalStats" title="Ayuda sobre Estadísticas Generales">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -494,7 +588,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#userActivityModal" data-chart-type="userActivity">
                              <div class="card-header">
                                 <h3 class="h6 mb-0">Actividad por Alumno (Top 15)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="userActivity" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="userActivity" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -507,7 +601,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#eventsOverTimeModal" data-chart-type="eventsOverTime">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Eventos por Día</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="eventsOverTime" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="eventsOverTime" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -520,7 +614,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#componentActivityModal" data-chart-type="componentActivity">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Actividad por Componente (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="componentActivity" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="componentActivity" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -535,7 +629,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#activityByHourModal" data-chart-type="activityByHour">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Eventos por Hora del Día</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="activityByHour" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="activityByHour" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -548,7 +642,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#activityByDayOfWeekModal" data-chart-type="activityByDayOfWeek">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Eventos por Día de Semana</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="activityByDayOfWeek" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="activityByDayOfWeek" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -561,7 +655,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#componentBreakdownModal" data-chart-type="componentBreakdown">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Desglose Eventos en Componentes</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="componentBreakdown" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="componentBreakdown" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -574,7 +668,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#activityByContextModal" data-chart-type="activityByContext">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Actividad por Contexto (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="activityByContext" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="activityByContext" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -590,7 +684,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#scatterUsersEventsDayModal" data-chart-type="scatterUsersEventsDay">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Usuarios Únicos vs Eventos (por Día)</h3>
-                                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="scatterUsersEventsDay" title="Ayuda sobre este gráfico">
+                                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="scatterUsersEventsDay" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -603,7 +697,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#scatterComponentsEventsUserModal" data-chart-type="scatterComponentsEventsUser">
                            <div class="card-header">
                                 <h3 class="h6 mb-0">Componentes Únicos vs Eventos (por Alumno)</h3>
-                                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="scatterComponentsEventsUser" title="Ayuda sobre este gráfico">
+                                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="scatterComponentsEventsUser" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -616,7 +710,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#scatterContentViewParticipationModal" data-chart-type="scatterContentViewParticipation">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Visualización vs Participación (por Alumno)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="scatterContentViewParticipation" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="scatterContentViewParticipation" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -632,7 +726,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#bubbleStudentAnalysisModal" data-chart-type="bubbleStudentAnalysis">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Análisis Alumnos (Días Act./ØEvtDia/TotalEvt)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="bubbleStudentAnalysis" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="bubbleStudentAnalysis" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -645,7 +739,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#bubbleComponentAnalysisModal" data-chart-type="bubbleComponentAnalysis">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Análisis Componentes (UsrUnicos/TotalEvt/ØEvtUsr)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="bubbleComponentAnalysis" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="bubbleComponentAnalysis" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -658,7 +752,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#bubbleContextAnalysisModal" data-chart-type="bubbleContextAnalysis">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Análisis Contextos (AluAct/ØEvtAlu/TotalEvt)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="bubbleContextAnalysis" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="bubbleContextAnalysis" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -674,7 +768,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#topIPsByEventsModal" data-chart-type="topIPsByEvents">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Top IPs por N° Eventos (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="topIPsByEvents" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="topIPsByEvents" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -687,7 +781,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#usersPerIPModal" data-chart-type="usersPerIP">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Top IPs por N° Alumnos (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="usersPerIP" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="usersPerIP" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -700,7 +794,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#ipsPerUserModal" data-chart-type="ipsPerUser">
                            <div class="card-header">
                                 <h3 class="h6 mb-0">Top Alumnos por N° IPs (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="ipsPerUser" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="ipsPerUser" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -719,7 +813,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#quizTimeDistributionModal" data-chart-type="quizTimeDistribution">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Distribución Tiempos Cuestionarios</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="quizTimeDistribution" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="quizTimeDistribution" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -732,7 +826,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#avgQuizTimePerUserModal" data-chart-type="avgQuizTimePerUser">
                            <div class="card-header">
                                 <h3 class="h6 mb-0">Ø Tiempo/Intento Cuest. (Alumno)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="avgQuizTimePerUser" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="avgQuizTimePerUser" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -745,7 +839,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#quizTimeVsPagesModal" data-chart-type="quizTimeVsPages">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Tiempo Intento vs. Págs. Vistas</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="quizTimeVsPages" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="quizTimeVsPages" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -847,7 +941,7 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
@@ -893,6 +987,7 @@
         let areFiltersPopulated = false;
         let ipColumnAvailable = false;
         let includeZeroActivity = false;
+        let csvQualityInfo = {raw:0,processed:0,missingColumns:[],unknownUsers:0};
         let initialFilterDates = null;
         
         let excludedUserSubstrings = []; 
@@ -1112,7 +1207,8 @@
             setDefaultTimes();
             loadSettings();
             updateFilterSummary();
-            document.getElementById('filtersPanel').addEventListener('change', updateFilterSummary); 
+            document.getElementById('filtersPanel').addEventListener('change', updateFilterSummary);
+            MoodleTrackingUI.init(); 
             
             analyzeButton.addEventListener('click', handleAnalysisRequest);
             csvFileInput.addEventListener('change', handleFileSelectionChange);
@@ -1148,7 +1244,7 @@
                     event.stopPropagation(); 
                     
                     const chartHelpType = helpButton.dataset.chartHelpType;
-                    const contentData = (typeof helpContent !== 'undefined' && helpContent[chartHelpType]) ? helpContent[chartHelpType] : null;
+                    const contentData = MoodleTrackingUI.helpFor(chartHelpType, typeof helpContent !== 'undefined' ? helpContent : null);
 
                     if (contentData) {
                         helpModalTitleEl.textContent = contentData.title;
@@ -1267,6 +1363,7 @@
                 allQuizAttempts = [];
                 areFiltersPopulated = false; 
                 initialFilterDates = null;
+                csvQualityInfo = {raw:0,processed:0,missingColumns:[],unknownUsers:0};
                 ipColumnAvailable = false;
                 minDateFromLog = null; 
                 maxDateFromLog = null;
@@ -1524,6 +1621,18 @@
 
                     const rawParsedData = results.data;
                     parsedDataCache = transformPapaParseResults(rawParsedData);
+                    const requiredHeaders = [
+                        CSV_COLUMN_MAPPING.TIME, CSV_COLUMN_MAPPING.FULL_NAME,
+                        CSV_COLUMN_MAPPING.COMPONENT, CSV_COLUMN_MAPPING.EVENT_NAME,
+                        CSV_COLUMN_MAPPING.EVENT_CONTEXT, CSV_COLUMN_MAPPING.DESCRIPTION
+                    ];
+                    const originalCsvHeaders = results.meta.fields || [];
+                    csvQualityInfo = {
+                        raw: rawParsedData.length,
+                        processed: parsedDataCache.length,
+                        missingColumns: requiredHeaders.filter(header => !originalCsvHeaders.includes(header)),
+                        unknownUsers: rawParsedData.filter(row => !String(row[CSV_COLUMN_MAPPING.FULL_NAME] || '').trim()).length
+                    };
 
                     if (!parsedDataCache || parsedDataCache.length === 0) {
                         showUserMessage("No se pudieron procesar datos del CSV o el archivo está vacío (después de Papa Parse).", "danger");
@@ -2526,7 +2635,37 @@
             return colors;
         }
 
+
+        function renderTrackingDashboard() {
+            if (typeof MoodleTracking === 'undefined' || typeof MoodleTrackingUI === 'undefined') return;
+            const dateInLocalTime = date => date ? [
+                date.getFullYear(), String(date.getMonth() + 1).padStart(2,'0'),
+                String(date.getDate()).padStart(2,'0')
+            ].join('-') : null;
+            const calculated = MoodleTracking.compute(
+                filteredDataForCharts, globallyProcessedDataForBaseLists, {
+                    start: startDateInput.value,
+                    end: endDateInput.value,
+                    asOf: dateInLocalTime(maxDateFromLog),
+                    selection: {
+                        user:userFilterSelect.value,
+                        event:eventFilterSelect.value,
+                        component:componentFilterSelect.value,
+                        context:contextFilterSelect.value,
+                        ips:Array.from(ipFilterSelect.selectedOptions).map(opt => opt.value),
+                        startTime:startTimeFilter.value,
+                        endTime:endTimeFilter.value
+                    },
+                    viewPatterns: VIEW_EVENT_PATTERNS,
+                    participationPatterns: PARTICIPATION_EVENT_PATTERNS,
+                    quality:csvQualityInfo
+                }
+            );
+            MoodleTrackingUI.render(calculated);
+        }
+
         function renderAllDashboardCharts() {
+            renderTrackingDashboard();
             renderDashUserActivityChart();
             renderDashEventsOverTimeChart();
             renderDashComponentActivityChart();
