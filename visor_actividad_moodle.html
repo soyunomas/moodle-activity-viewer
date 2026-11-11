@@ -6,11 +6,14 @@
     <title>Visor de Actividad Moodle</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     
     <script src="help_content.js"></script> 
     <script src="report_generator.js"></script>
+    <script src="learning_analytics.js"></script>
+    <script src="learning_analytics_ui.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -185,6 +188,222 @@
                  width: 100%;
             }
         }
+
+        /* Controles compactos: el contenido del análisis tiene prioridad visual. */
+        body {
+            background: #F4F3EF;
+            color: #18181B;
+            font-family: "DM Sans", system-ui, sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6, .navbar-brand, .offcanvas-title {
+            font-family: "Space Grotesk", "DM Sans", sans-serif;
+            letter-spacing: -.025em;
+        }
+        .navbar.bg-dark { background-color: #18181B !important; }
+        .sticky-controls {
+            position: sticky;
+            top: 56px;
+            z-index: 1020;
+            background: #F4F3EF;
+            border-bottom: 1px solid #d8d7d0;
+        }
+        .analysis-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .65rem;
+            padding: .65rem .25rem;
+        }
+        .toolbar-file {
+            display: flex;
+            align-items: center;
+            flex: 1 1 330px;
+            min-width: 230px;
+            gap: .6rem;
+        }
+        .toolbar-label {
+            flex: 0 0 auto;
+            margin: 0;
+            color: #5d605b;
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .toolbar-file .form-control {
+            min-width: 0;
+            max-width: 340px;
+            background: #FAF9F6;
+            font-size: .8rem;
+        }
+        .analysis-toolbar .btn {
+            flex: 0 0 auto;
+            border-radius: .3rem;
+            padding: .4rem .85rem;
+            font-size: .82rem;
+            font-weight: 600;
+        }
+        .btn-primary {
+            --bs-btn-color: #FAF9F6;
+            --bs-btn-bg: #1B4332;
+            --bs-btn-border-color: #1B4332;
+            --bs-btn-hover-color: #FAF9F6;
+            --bs-btn-hover-bg: #143225;
+            --bs-btn-hover-border-color: #143225;
+            --bs-btn-active-bg: #143225;
+            --bs-btn-active-border-color: #143225;
+            --bs-btn-disabled-bg: #1B4332;
+            --bs-btn-disabled-border-color: #1B4332;
+        }
+        .filter-count {
+            margin-left: .35rem;
+            padding: .08rem .4rem;
+            border-radius: .25rem;
+            background: #E4E9E4;
+            color: #1B4332;
+            font-size: .72rem;
+        }
+        .filter-count[hidden] { display: none !important; }
+        .toolbar-summary {
+            min-width: 0;
+            max-width: 340px;
+            margin-left: auto;
+            overflow: hidden;
+            color: #5b605a;
+            font-size: .77rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #statusMessage { margin: .2rem 0 .45rem !important; padding: 0 !important; border: none !important; font-size: .8rem; }
+        #statusMessage:empty { display: none; }
+        #statusMessage.text-info { color: #1B4332 !important; font-weight: 600; }
+        .filters-panel {
+            --bs-offcanvas-width: min(440px, 100vw);
+            background: #FAF9F6;
+            color: #18181B;
+        }
+        .filters-panel .offcanvas-header {
+            align-items: flex-start;
+            padding: 1.4rem 1.5rem .8rem;
+            border-bottom: 1px solid #deded8;
+        }
+        .filters-panel .offcanvas-title { font-size: 1.35rem; font-weight: 600; }
+        .filters-panel .offcanvas-body { padding: .85rem 1.5rem 1.5rem; }
+        .filters-intro { font-size: .82rem; color: #646760; margin-bottom: 1.25rem; }
+        .filter-section { padding-top: 1rem; margin-bottom: 1.25rem; border-top: 1px solid #deded8; }
+        .filter-section-title {
+            margin-bottom: .75rem;
+            color: #1B4332;
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+        .filters-panel .form-label { margin-bottom: .25rem; font-size: .77rem; font-weight: 600; }
+        .filters-panel .form-control, .filters-panel .form-select {
+            background-color: #FAF9F6;
+            border-color: #d4d5cc;
+            border-radius: .3rem;
+            font-size: .84rem;
+            min-height: 2.1rem;
+        }
+        .filters-panel .form-control:focus, .filters-panel .form-select:focus {
+            border-color: #1B4332;
+            box-shadow: 0 0 0 .15rem rgba(27,67,50,.12);
+        }
+        .filters-panel #ipFilter { min-height: 6.5rem; }
+        .filters-panel .form-text { font-size: .73rem; }
+        .filters-panel .form-check-label { font-size: .82rem; }
+        .filters-panel .form-check-input:checked { background-color: #1B4332; border-color: #1B4332; }
+        .filters-panel .offcanvas-footer {
+            padding: .85rem 1.5rem;
+            border-top: 1px solid #deded8;
+        }
+        .filters-panel .offcanvas-footer .btn { width: 100%; }
+        .chart-card:hover { border-color: #1B4332; }
+        @media (max-width: 767.98px) {
+            .analysis-toolbar { gap: .5rem; }
+            .toolbar-file { flex-basis: 100%; }
+            .toolbar-file .form-control { max-width: none; }
+            .toolbar-summary { flex: 1 1 100%; max-width: none; margin-left: 0; }
+            .filters-panel .offcanvas-header { padding: 1rem 1.1rem .75rem; }
+            .filters-panel .offcanvas-body { padding: .75rem 1.1rem; }
+            .filters-panel .offcanvas-footer { padding: .75rem 1.1rem; }
+        }
+
+        /* Capa de seguimiento docente: editorial, legible y sin decoración innecesaria. */
+        .tracking-dashboard { margin-bottom: 2rem; color: #18181B; }
+        .tracking-eyebrow { color: #1B4332; font-size: .7rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+        .tracking-heading { margin: .4rem 0; font-size: clamp(1.45rem, 3vw, 2.1rem); line-height: 1.12; }
+        .tracking-caption { max-width: 790px; font-size: .85rem; color: #53584F; }
+        .tracking-topline { border-bottom: 1px solid #D6D8CF; padding: 1.1rem 0 .8rem; }
+        .tracking-summary {
+            display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+            gap: 0; margin: .8rem 0 1.25rem; border-block: 1px solid #D6D8CF;
+        }
+        .tracking-summary-item { padding: 1rem 1.25rem; border-right: 1px solid #D6D8CF; }
+        .tracking-summary-item:first-child { padding-left: 0; }
+        .tracking-summary-item:last-child { border-right: 0; }
+        .tracking-summary-item strong { display: block; color: #1B4332; font-size: clamp(1.45rem, 2.1vw, 2rem); line-height: 1.1; font-family: "Space Grotesk", sans-serif; }
+        .tracking-summary-item span { display: block; margin-top: .3rem; color: #53584F; font-size: .77rem; }
+        .tracking-section-heading { margin: 1.6rem 0 .9rem; padding: 0 0 .5rem; border-bottom: 1px solid #d9dad2; font-size: 1.13rem; }
+        .tracking-panel {
+            height: 100%; border: 1px solid #D8D9D0; border-radius: .4rem;
+            background: #FAF9F6; padding: 1.1rem 1.15rem;
+        }
+        .tracking-panel-head { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+        .tracking-panel-head h3 { margin: 0 0 .45rem; font-size: 1rem; }
+        .tracking-panel-head .help-button {
+            border: 1px solid #b8bcb1; color: #1B4332;
+            border-radius: .2rem !important; width: 1.8rem; height: 1.8rem; padding: 0;
+            display: inline-grid; place-items: center; flex: none;
+        }
+        .tracking-panel > p { margin: .45rem 0 .85rem; color: #5D6059; font-size: .78rem; }
+        .tracking-note { color: #62665F; font-size: .72rem; margin: .6rem 0 0; }
+        .tracking-table-wrap { max-height: 440px; overflow: auto; border-top: 1px solid #E3E3DE; }
+        .tracking-table { width: 100%; min-width: 560px; border-collapse: separate; border-spacing: 0; font-size: .75rem; }
+        .tracking-table th, .tracking-table td { padding: .4rem .35rem; text-align: center; border-bottom: 1px solid #E7E8E0; white-space: nowrap; }
+        .tracking-table thead th { position: sticky; top: 0; z-index: 2; background: #FAF9F6; font-weight: 600; }
+        .tracking-table .tracking-person { position: sticky; left: 0; z-index: 1; min-width: 125px; max-width: 180px; text-align: left; white-space: normal; background: #FAF9F6; }
+        .tracking-table thead .tracking-person { z-index: 3; }
+        .tracking-person-link { border: none; background: transparent; padding: 0; color: #1B4332; font-weight: 600; text-align: left; text-decoration: underline; text-underline-offset: 2px; }
+        .tracking-week { display: inline-block; min-width: 25px; padding: .2rem .25rem; background: #ECEDE7; border-radius: .2rem; }
+        .tracking-week.is-active { color: #FAF9F6; background: #1B4332; }
+        .tracking-review { color: #964600; font-weight: 700; }
+        .tracking-profile-select { width: 100%; max-width: 330px; margin: .35rem 0; font-size: .85rem; }
+        .tracking-chart-wrap { position: relative; height: 230px; }
+        .tracking-heat-scroll { overflow-x: auto; }
+        .tracking-heat-grid {
+            display: grid; grid-template-columns: 34px repeat(24,minmax(16px,1fr));
+            gap: 3px; min-width: 545px; align-items: center;
+        }
+        .tracking-heat-label { color: #61655D; text-align: center; font-size: .63rem; }
+        .tracking-heat-cell { display: block; height: 22px; border-radius: 1px; }
+        .heat-0 { background: #EBECE6; }
+        .heat-1 { background: #CDDCCF; }
+        .heat-2 { background: #8AB39A; }
+        .heat-3 { background: #4E8766; }
+        .heat-4 { background: #1B4332; }
+        .tracking-kpi strong { font-size: 2rem; color: #1B4332; }
+        .tracking-delta { color: #1B4332; font-weight: 600; }
+        .tracking-stacked { display: flex; height: 18px; overflow: hidden; border-radius: 2px; background: #EBECE6; }
+        .tracking-stack-view { background: #1B4332; }
+        .tracking-stack-participation { background: #6E927A; }
+        .tracking-stack-other { background: #BEC9B9; }
+        .tracking-legend { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .8rem; font-size: .75rem; }
+        .tracking-swatch { display: inline-block; width: 9px; height: 9px; margin-right: .35rem; }
+        .tracking-alert-list { margin: .5rem 0; padding-left: 1.1rem; font-size: .8rem; }
+        .tracking-alert-list li { padding: .25rem 0; }
+        .tracking-panel .form-label { font-size: .8rem; }
+        .tracking-panel .help-button:focus-visible, .tracking-person-link:focus-visible { outline: 2px solid #1B4332; outline-offset: 3px; }
+        @media (max-width: 767.98px) {
+            .tracking-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .tracking-summary-item { padding: .75rem; border-bottom: 1px solid #D6D8CF; }
+            .tracking-summary-item:nth-child(2) { border-right: 0; }
+            .tracking-summary-item:nth-child(n+3) { border-bottom: 0; }
+            .tracking-summary-item:nth-child(3) { padding-left: 0; }
+            .tracking-panel { padding: .85rem; }
+        }
     </style>
 </head>
 <body>
@@ -223,91 +442,97 @@
         </div>
     </nav>
 
-    <div class="container-fluid px-md-4 pt-4">
+    <div class="container-fluid px-md-4 pt-2">
         <div class="sticky-controls">
-            <div class="card">
-                <div class="accordion" id="analysisControlsAccordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="controlsAccordionHeader">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseControls" aria-expanded="true" aria-controls="collapseControls">
-                                Configuración de Análisis y Filtros
-                            </button>
-                        </h2>
-                        <div id="collapseControls" class="accordion-collapse collapse show" aria-labelledby="controlsAccordionHeader" data-bs-parent="#analysisControlsAccordion">
-                            <div class="accordion-body">
-                                <div class="row g-3 align-items-end">
-                                    <div class="col-md-12 mb-3">
-                                        <label for="csvFile" class="form-label fw-bold">1. Selecciona el archivo CSV:</label>
-                                        <input class="form-control" type="file" id="csvFile" accept=".csv">
-                                    </div>
-                                    <div class="col-md-12 d-grid mb-3">
-                                        <button id="analyzeButton" class="btn btn-primary btn-lg">Analizar Logs</button>
-                                    </div>                                    
-                                    <div class="col-md-12 filter-group mb-3">
-                                        <p class="form-label fw-bold mb-1">2. Filtros de Análisis:</p>
-                                        <div class="form-check form-switch mb-2">
-                                            <input class="form-check-input" type="checkbox" role="switch" id="includeZeroActivitySwitch">
-                                            <label class="form-check-label" for="includeZeroActivitySwitch">Incluir ítems con 0 actividad en rankings</label>
-                                        </div>
-                                        <div class="filters-scroll-area">
-                                            <div class="row g-2">
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="startDate" class="form-label">Fecha Inicio:</label>
-                                                    <input type="date" class="form-control form-control-sm" id="startDate">
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="endDate" class="form-label">Fecha Fin:</label>
-                                                    <input type="date" class="form-control form-control-sm" id="endDate">
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="startTimeFilter" class="form-label">Hora Inicio:</label>
-                                                    <input type="time" class="form-control form-control-sm" id="startTimeFilter" value="00:00">
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="endTimeFilter" class="form-label">Hora Fin:</label>
-                                                    <input type="time" class="form-control form-control-sm" id="endTimeFilter" value="23:59">
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="userFilter" class="form-label">Alumno:</label>
-                                                    <select id="userFilter" class="form-select form-select-sm">
-                                                        <option value="ALL_USERS">Todos los Alumnos</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-4 col-lg-2">
-                                                    <label for="eventFilter" class="form-label">Nombre Evento:</label>
-                                                    <select id="eventFilter" class="form-select form-select-sm">
-                                                        <option value="ALL_EVENTS">Todos los Eventos</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="row g-2 mt-2">
-                                                <div class="col-md-4">
-                                                    <label for="componentFilter" class="form-label">Componente:</label>
-                                                    <select id="componentFilter" class="form-select form-select-sm">
-                                                        <option value="ALL_COMPONENTS">Todos los Componentes</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <label for="contextFilter" class="form-label">Contexto Evento:</label>
-                                                    <select id="contextFilter" class="form-select form-select-sm">
-                                                        <option value="ALL_CONTEXTS">Todos los Contextos</option>
-                                                    </select>
-                                                </div>
-                                                 <div class="col-md-4">
-                                                    <label for="ipFilter" class="form-label">Dirección IP:</label>
-                                                    <select id="ipFilter" class="form-select form-select-sm" multiple size="3">
-                                                    </select>
-                                                    <div class="form-text" id="ipFilterHelp">Seleccione una o más IPs. Ninguna selección implica todas.</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id="statusMessage" class="mt-3 pt-2 border-top"></div>
-                            </div>
+            <div class="analysis-toolbar" role="region" aria-label="Controles de análisis">
+                <div class="toolbar-file">
+                    <label class="toolbar-label" for="csvFile">Archivo CSV</label>
+                    <input class="form-control form-control-sm" type="file" id="csvFile" accept=".csv">
+                </div>
+                <button id="analyzeButton" type="button" class="btn btn-primary btn-sm">Analizar</button>
+                <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="offcanvas" data-bs-target="#filtersPanel" aria-controls="filtersPanel">
+                    Filtros <span class="filter-count" id="activeFilterCount" hidden>0</span>
+                </button>
+                <span class="toolbar-summary" id="filterSummary" role="status" aria-live="polite">Sin filtros adicionales</span>
+            </div>
+        </div>
+        <div id="statusMessage" role="status" aria-live="polite"></div>
+
+        <div class="offcanvas offcanvas-end filters-panel" tabindex="-1" id="filtersPanel" aria-labelledby="filtersPanelLabel">
+            <div class="offcanvas-header">
+                <div>
+                    <div class="toolbar-label mb-2">Ajustes del análisis</div>
+                    <h2 class="offcanvas-title" id="filtersPanelLabel">Filtros</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar filtros"></button>
+            </div>
+            <div class="offcanvas-body">
+                <p class="filters-intro">Al cambiar un filtro, los resultados se actualizan automáticamente tras analizar el CSV.</p>
+                <section class="filter-section" aria-labelledby="filterPeriodTitle">
+                    <h3 class="filter-section-title" id="filterPeriodTitle">Periodo</h3>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label for="startDate" class="form-label">Fecha de inicio</label>
+                            <input type="date" class="form-control form-control-sm" id="startDate">
+                        </div>
+                        <div class="col-6">
+                            <label for="endDate" class="form-label">Fecha de fin</label>
+                            <input type="date" class="form-control form-control-sm" id="endDate">
+                        </div>
+                        <div class="col-6">
+                            <label for="startTimeFilter" class="form-label">Hora de inicio</label>
+                            <input type="time" class="form-control form-control-sm" id="startTimeFilter" value="00:00">
+                        </div>
+                        <div class="col-6">
+                            <label for="endTimeFilter" class="form-label">Hora de fin</label>
+                            <input type="time" class="form-control form-control-sm" id="endTimeFilter" value="23:59">
                         </div>
                     </div>
-                </div>
+                </section>
+                <section class="filter-section" aria-labelledby="filterActivityTitle">
+                    <h3 class="filter-section-title" id="filterActivityTitle">Actividad</h3>
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label for="userFilter" class="form-label">Alumno</label>
+                            <select id="userFilter" class="form-select form-select-sm">
+                                <option value="ALL_USERS">Todos los alumnos</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="eventFilter" class="form-label">Nombre del evento</label>
+                            <select id="eventFilter" class="form-select form-select-sm">
+                                <option value="ALL_EVENTS">Todos los eventos</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="componentFilter" class="form-label">Componente</label>
+                            <select id="componentFilter" class="form-select form-select-sm">
+                                <option value="ALL_COMPONENTS">Todos los componentes</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="contextFilter" class="form-label">Contexto del evento</label>
+                            <select id="contextFilter" class="form-select form-select-sm">
+                                <option value="ALL_CONTEXTS">Todos los contextos</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="ipFilter" class="form-label">Dirección IP (selección múltiple)</label>
+                            <select id="ipFilter" class="form-select form-select-sm" multiple size="4" aria-describedby="ipFilterHelp"></select>
+                            <div class="form-text" id="ipFilterHelp">Sin selección se incluyen todas las IP.</div>
+                        </div>
+                    </div>
+                </section>
+                <section class="filter-section" aria-labelledby="filterDisplayTitle">
+                    <h3 class="filter-section-title" id="filterDisplayTitle">Visualización</h3>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="includeZeroActivitySwitch">
+                        <label class="form-check-label" for="includeZeroActivitySwitch">Incluir elementos con 0 actividad en los rankings</label>
+                    </div>
+                </section>
+            </div>
+            <div class="offcanvas-footer">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="offcanvas">Ver resultados</button>
             </div>
         </div>
 
@@ -319,13 +544,31 @@
         </div>
         
         <main id="resultsSection" class="hidden">
-            <div class="container-fluid px-0"> 
+            <div class="container-fluid px-0">
+
+                <section id="trackingDashboard" class="tracking-dashboard" aria-label="Seguimiento del alumnado">
+                    <div class="tracking-topline">
+                        <span class="tracking-eyebrow">Seguimiento docente · Durante el curso</span>
+                        <h1 class="tracking-heading">Continuidad, cambios y contexto</h1>
+                        <p class="tracking-caption">Los registros ayudan a detectar cambios en el uso de Moodle. No son una medida de aprendizaje ni prueban falta de interés. Todas las fechas se interpretan respecto al CSV.</p>
+                        <p id="trackingAsOf" class="tracking-note" aria-live="polite"></p>
+                    </div>
+                    <div class="tracking-summary">
+                        <div class="tracking-summary-item"><strong id="trackingKpiStudents">—</strong><span>Alumnos detectados en el CSV filtrable</span></div>
+                        <div class="tracking-summary-item"><strong id="trackingKpiGaps">—</strong><span>Con 7 días o más sin eventos</span></div>
+                        <div class="tracking-summary-item"><strong id="trackingKpiMissing">—</strong><span>Sin eventos en el periodo</span></div>
+                        <div class="tracking-summary-item"><strong id="trackingKpiSessions">—</strong><span>Sesiones estimadas</span></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>01 · Continuidad semanal</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingContinuity" aria-label="Ayuda: trackingContinuity" title="Qué muestra y cómo interpretarlo">?</button></div><p>Pulsa en el nombre para consultar su evolución. Se muestran las últimas 12 semanas del intervalo.</p><div class="tracking-table-wrap"><table class="tracking-table" id="trackingContinuityTable" aria-label="Continuidad semanal por alumno"></table></div><p class="tracking-note">Los días sin eventos se calculan hasta el último día observado en el CSV, limitado por el filtro de fechas.</p></article></div><div class="col-xl-5" id="trackingProfile"><article class="tracking-panel"><div class="tracking-panel-head"><h3>02 · Evolución individual</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingProgress" aria-label="Ayuda: trackingProgress" title="Qué muestra y cómo interpretarlo">?</button></div><p>Cómo cambia la actividad semanal de un alumno durante el curso.</p><label class="form-label" for="trackingStudentSelect">Alumno/a</label><select id="trackingStudentSelect" class="form-select form-select-sm tracking-profile-select"></select><p class="tracking-note" id="trackingStudentMeta"></p><div class="tracking-chart-wrap"><canvas id="trackingProgressCanvas" role="img" aria-label="Eventos semanales del alumno seleccionado"></canvas></div></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>03 · Periodo frente al anterior</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingComparison" aria-label="Ayuda: trackingComparison" title="Qué muestra y cómo interpretarlo">?</button></div><p>Mismos filtros y tramos de idéntica duración. No se estima actividad que falte en el archivo.</p><div id="trackingComparison" class="tracking-comparison"></div></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>04 · Mapa de calor · Día y hora</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingHeatmap" aria-label="Ayuda: trackingHeatmap" title="Qué muestra y cómo interpretarlo">?</button></div><p>Cuándo se producen más eventos en el conjunto filtrado.</p><div id="trackingHeatmap" class="tracking-heat-scroll"></div></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>05 · Tipos de interacción</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingActivityMix" aria-label="Ayuda: trackingActivityMix" title="Qué muestra y cómo interpretarlo">?</button></div><p>Consulta, participación y otras acciones según patrones configurables.</p><div id="trackingComposition"></div><p class="tracking-note">Clasificación aproximada por nombre de evento; ajusta patrones desde Configuración.</p></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>06 · Sesiones aproximadas</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingSessions" aria-label="Ayuda: trackingSessions" title="Qué muestra y cómo interpretarlo">?</button></div><p>Una pausa superior a 30 minutos inicia una sesión nueva.</p><p id="trackingSessions"></p><p class="tracking-note">La duración solo mide el intervalo entre eventos.</p></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>07 · Concentraciones para revisar</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingAnomalies" aria-label="Ayuda: trackingAnomalies" title="Qué muestra y cómo interpretarlo">?</button></div><p>Señales descriptivas de actividad especialmente concentrada por hora; no son acusaciones.</p><div id="trackingAnomalies"></div></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>08 · Calidad del CSV</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingQuality" aria-label="Ayuda: trackingQuality" title="Qué muestra y cómo interpretarlo">?</button></div><p>Comprueba si la exportación permite interpretar los datos.</p><p id="trackingQuality"></p></article></div></div>
+                </section>
+ 
                 <div class="row mb-3 g-3">
                     <div class="col-xl-3 col-md-6">
                         <div class="card h-100">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Estadísticas Generales</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="generalStats" title="Ayuda sobre Estadísticas Generales">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="generalStats" title="Ayuda sobre Estadísticas Generales">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -345,7 +588,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#userActivityModal" data-chart-type="userActivity">
                              <div class="card-header">
                                 <h3 class="h6 mb-0">Actividad por Alumno (Top 15)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="userActivity" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="userActivity" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -358,7 +601,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#eventsOverTimeModal" data-chart-type="eventsOverTime">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Eventos por Día</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="eventsOverTime" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="eventsOverTime" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -371,7 +614,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#componentActivityModal" data-chart-type="componentActivity">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Actividad por Componente (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="componentActivity" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="componentActivity" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -386,7 +629,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#activityByHourModal" data-chart-type="activityByHour">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Eventos por Hora del Día</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="activityByHour" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="activityByHour" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -399,7 +642,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#activityByDayOfWeekModal" data-chart-type="activityByDayOfWeek">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Eventos por Día de Semana</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="activityByDayOfWeek" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="activityByDayOfWeek" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -412,7 +655,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#componentBreakdownModal" data-chart-type="componentBreakdown">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Desglose Eventos en Componentes</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="componentBreakdown" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="componentBreakdown" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -425,7 +668,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#activityByContextModal" data-chart-type="activityByContext">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Actividad por Contexto (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="activityByContext" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="activityByContext" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -441,7 +684,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#scatterUsersEventsDayModal" data-chart-type="scatterUsersEventsDay">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Usuarios Únicos vs Eventos (por Día)</h3>
-                                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="scatterUsersEventsDay" title="Ayuda sobre este gráfico">
+                                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="scatterUsersEventsDay" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -454,7 +697,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#scatterComponentsEventsUserModal" data-chart-type="scatterComponentsEventsUser">
                            <div class="card-header">
                                 <h3 class="h6 mb-0">Componentes Únicos vs Eventos (por Alumno)</h3>
-                                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="scatterComponentsEventsUser" title="Ayuda sobre este gráfico">
+                                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="scatterComponentsEventsUser" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -467,7 +710,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#scatterContentViewParticipationModal" data-chart-type="scatterContentViewParticipation">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Visualización vs Participación (por Alumno)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="scatterContentViewParticipation" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="scatterContentViewParticipation" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -483,7 +726,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#bubbleStudentAnalysisModal" data-chart-type="bubbleStudentAnalysis">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Análisis Alumnos (Días Act./ØEvtDia/TotalEvt)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="bubbleStudentAnalysis" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="bubbleStudentAnalysis" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -496,7 +739,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#bubbleComponentAnalysisModal" data-chart-type="bubbleComponentAnalysis">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Análisis Componentes (UsrUnicos/TotalEvt/ØEvtUsr)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="bubbleComponentAnalysis" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="bubbleComponentAnalysis" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -509,7 +752,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#bubbleContextAnalysisModal" data-chart-type="bubbleContextAnalysis">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Análisis Contextos (AluAct/ØEvtAlu/TotalEvt)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="bubbleContextAnalysis" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="bubbleContextAnalysis" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -525,7 +768,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#topIPsByEventsModal" data-chart-type="topIPsByEvents">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Top IPs por N° Eventos (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="topIPsByEvents" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="topIPsByEvents" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -538,7 +781,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#usersPerIPModal" data-chart-type="usersPerIP">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Top IPs por N° Alumnos (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="usersPerIP" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="usersPerIP" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -551,7 +794,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#ipsPerUserModal" data-chart-type="ipsPerUser">
                            <div class="card-header">
                                 <h3 class="h6 mb-0">Top Alumnos por N° IPs (Top 10)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="ipsPerUser" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="ipsPerUser" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -570,7 +813,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#quizTimeDistributionModal" data-chart-type="quizTimeDistribution">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Distribución Tiempos Cuestionarios</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="quizTimeDistribution" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="quizTimeDistribution" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -583,7 +826,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#avgQuizTimePerUserModal" data-chart-type="avgQuizTimePerUser">
                            <div class="card-header">
                                 <h3 class="h6 mb-0">Ø Tiempo/Intento Cuest. (Alumno)</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="avgQuizTimePerUser" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="avgQuizTimePerUser" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -596,7 +839,7 @@
                         <div class="card h-100 chart-card" data-modal-target="#quizTimeVsPagesModal" data-chart-type="quizTimeVsPages">
                             <div class="card-header">
                                 <h3 class="h6 mb-0">Tiempo Intento vs. Págs. Vistas</h3>
-                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-bs-toggle="modal" data-bs-target="#helpModal" data-chart-help-type="quizTimeVsPages" title="Ayuda sobre este gráfico">
+                                <button type="button" class="btn btn-outline-secondary btn-sm rounded-circle help-button" data-chart-help-type="quizTimeVsPages" title="Ayuda sobre este gráfico">
                                     <i class="bi bi-question-lg"></i>
                                 </button>
                             </div>
@@ -698,7 +941,7 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
@@ -744,6 +987,8 @@
         let areFiltersPopulated = false;
         let ipColumnAvailable = false;
         let includeZeroActivity = false;
+        let csvQualityInfo = {raw:0,processed:0,missingColumns:[],unknownUsers:0};
+        let initialFilterDates = null;
         
         let excludedUserSubstrings = []; 
         let excludedComponentSubstrings = [];
@@ -809,6 +1054,8 @@
         const ipFilterSelect = document.getElementById('ipFilter');
         const ipFilterHelpText = document.getElementById('ipFilterHelp');
         const analyzeButton = document.getElementById('analyzeButton');
+        const activeFilterCountEl = document.getElementById('activeFilterCount');
+        const filterSummaryEl = document.getElementById('filterSummary');
         const statusMessage = document.getElementById('statusMessage');
         const resultsSection = document.getElementById('resultsSection');
         const loadingIndicator = document.getElementById('loadingIndicator');
@@ -837,7 +1084,7 @@
         const quizAnalysisRow = document.getElementById('quizAnalysisRow');
 
 
-        Chart.defaults.font.family = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'";
+        Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
         Chart.defaults.plugins.legend.position = 'bottom';
         Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0,0,0,0.8)';
         Chart.defaults.plugins.tooltip.multiKeyBackground = '#000';
@@ -925,10 +1172,43 @@
         }
 
 
+
+        function updateFilterSummary() {
+            const specificFilters = [
+                userFilterSelect.value !== 'ALL_USERS',
+                eventFilterSelect.value !== 'ALL_EVENTS',
+                componentFilterSelect.value !== 'ALL_COMPONENTS',
+                contextFilterSelect.value !== 'ALL_CONTEXTS',
+                ipFilterSelect.selectedOptions.length > 0,
+                startTimeFilter.value !== '00:00' || endTimeFilter.value !== '23:59',
+                includeZeroActivitySwitch.checked,
+                initialFilterDates !== null && (
+                    startDateInput.value !== initialFilterDates.start ||
+                    endDateInput.value !== initialFilterDates.end
+                )
+            ];
+            const count = specificFilters.filter(Boolean).length;
+            activeFilterCountEl.textContent = String(count);
+            activeFilterCountEl.hidden = count === 0;
+            const formatDate = value => {
+                const parts = value.split('-');
+                return parts.length === 3 ? [parts[2], parts[1], parts[0]].join('/') : value;
+            };
+            const period = startDateInput.value && endDateInput.value
+                ? formatDate(startDateInput.value) + ' – ' + formatDate(endDateInput.value)
+                : 'Fechas sin definir';
+            const detail = count === 0 ? 'sin filtros adicionales' : count + (count === 1 ? ' filtro activo' : ' filtros activos');
+            filterSummaryEl.textContent = parsedDataCache.length > 0 ? 'Periodo ' + period + ' · ' + detail : 'Selecciona un CSV para empezar';
+            filterSummaryEl.title = filterSummaryEl.textContent;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             setDefaultDates();
             setDefaultTimes();
-            loadSettings(); 
+            loadSettings();
+            updateFilterSummary();
+            document.getElementById('filtersPanel').addEventListener('change', updateFilterSummary);
+            MoodleTrackingUI.init(); 
             
             analyzeButton.addEventListener('click', handleAnalysisRequest);
             csvFileInput.addEventListener('change', handleFileSelectionChange);
@@ -964,7 +1244,7 @@
                     event.stopPropagation(); 
                     
                     const chartHelpType = helpButton.dataset.chartHelpType;
-                    const contentData = (typeof helpContent !== 'undefined' && helpContent[chartHelpType]) ? helpContent[chartHelpType] : null;
+                    const contentData = MoodleTrackingUI.helpFor(chartHelpType, typeof helpContent !== 'undefined' ? helpContent : null);
 
                     if (contentData) {
                         helpModalTitleEl.textContent = contentData.title;
@@ -1082,6 +1362,8 @@
                 filteredDataForCharts = [];
                 allQuizAttempts = [];
                 areFiltersPopulated = false; 
+                initialFilterDates = null;
+                csvQualityInfo = {raw:0,processed:0,missingColumns:[],unknownUsers:0};
                 ipColumnAvailable = false;
                 minDateFromLog = null; 
                 maxDateFromLog = null;
@@ -1102,6 +1384,7 @@
                 statusMessage.textContent = 'Ningún archivo seleccionado.';
                 statusMessage.className = 'mt-3 pt-2 border-top text-muted';
             }
+            updateFilterSummary();
         }
         
         function processExclusionText(text) {
@@ -1338,6 +1621,18 @@
 
                     const rawParsedData = results.data;
                     parsedDataCache = transformPapaParseResults(rawParsedData);
+                    const requiredHeaders = [
+                        CSV_COLUMN_MAPPING.TIME, CSV_COLUMN_MAPPING.FULL_NAME,
+                        CSV_COLUMN_MAPPING.COMPONENT, CSV_COLUMN_MAPPING.EVENT_NAME,
+                        CSV_COLUMN_MAPPING.EVENT_CONTEXT, CSV_COLUMN_MAPPING.DESCRIPTION
+                    ];
+                    const originalCsvHeaders = results.meta.fields || [];
+                    csvQualityInfo = {
+                        raw: rawParsedData.length,
+                        processed: parsedDataCache.length,
+                        missingColumns: requiredHeaders.filter(header => !originalCsvHeaders.includes(header)),
+                        unknownUsers: rawParsedData.filter(row => !String(row[CSV_COLUMN_MAPPING.FULL_NAME] || '').trim()).length
+                    };
 
                     if (!parsedDataCache || parsedDataCache.length === 0) {
                         showUserMessage("No se pudieron procesar datos del CSV o el archivo está vacío (después de Papa Parse).", "danger");
@@ -1374,6 +1669,7 @@
                          minDateFromLog = null; maxDateFromLog = null; setDefaultDates(); 
                     }
 
+                    initialFilterDates = { start: startDateInput.value, end: endDateInput.value };
                     globallyProcessedDataForBaseLists = applyGlobalExclusions(parsedDataCache);
 
                     const originalHeaders = results.meta.fields; 
@@ -1644,6 +1940,7 @@
             if (!areFiltersPopulated) { 
                 populateFilterSelects(dataToProcessAfterGlobalExclusions); 
             }
+            updateFilterSummary();
 
             const startDateVal = startDateInput.valueAsDate;
             const endDateVal = endDateInput.valueAsDate;
@@ -1733,6 +2030,7 @@
                 renderAllDashboardCharts(); 
                 renderLogTable(filteredDataForCharts); 
                 resultsSection.classList.remove('hidden'); 
+                renderTrackingDashboard();
                 if(allQuizAttempts.length > 0) quizAnalysisRow.classList.remove('hidden'); else quizAnalysisRow.classList.add('hidden');
                 return;
             }
@@ -1775,6 +2073,7 @@
             renderLogTable(filteredDataForCharts);
 
             resultsSection.classList.remove('hidden');
+            renderTrackingDashboard();
             if(allQuizAttempts.length > 0) {
                 quizAnalysisRow.classList.remove('hidden');
             } else {
@@ -2336,6 +2635,35 @@
                 colors.push(CHART_COLORS[i % CHART_COLORS.length]);
             }
             return colors;
+        }
+
+
+        function renderTrackingDashboard() {
+            if (typeof MoodleTracking === 'undefined' || typeof MoodleTrackingUI === 'undefined') return;
+            const dateInLocalTime = date => date ? [
+                date.getFullYear(), String(date.getMonth() + 1).padStart(2,'0'),
+                String(date.getDate()).padStart(2,'0')
+            ].join('-') : null;
+            const calculated = MoodleTracking.compute(
+                filteredDataForCharts, globallyProcessedDataForBaseLists, {
+                    start: startDateInput.value,
+                    end: endDateInput.value,
+                    asOf: dateInLocalTime(maxDateFromLog),
+                    selection: {
+                        user:userFilterSelect.value,
+                        event:eventFilterSelect.value,
+                        component:componentFilterSelect.value,
+                        context:contextFilterSelect.value,
+                        ips:Array.from(ipFilterSelect.selectedOptions).map(opt => opt.value),
+                        startTime:startTimeFilter.value,
+                        endTime:endTimeFilter.value
+                    },
+                    viewPatterns: VIEW_EVENT_PATTERNS,
+                    participationPatterns: PARTICIPATION_EVENT_PATTERNS,
+                    quality:csvQualityInfo
+                }
+            );
+            MoodleTrackingUI.render(calculated);
         }
 
         function renderAllDashboardCharts() {

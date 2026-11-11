@@ -1,0 +1,16 @@
+name: Verificar visor Moodle
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar JavaScript y elementos de la interfaz
+        run: |
+          node tests/learning_analytics.test.js
+          node tests/ui_integrity.test.js

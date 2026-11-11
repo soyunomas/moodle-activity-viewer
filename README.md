@@ -1,5 +1,12 @@
 # Visor de Actividad Moodle 📊
 
+### [Abrir el visor de seguimiento en GitHub Pages](https://soyunomas.github.io/moodle-activity-viewer/)
+
+**Acceso directo:** [https://soyunomas.github.io/moodle-activity-viewer/](https://soyunomas.github.io/moodle-activity-viewer/)
+
+No necesitas instalar nada: exporta los registros CSV de Moodle, abre el visor y selecciona el archivo. El análisis se hace en tu navegador; los CSV no se envían a un servidor por esta herramienta.
+
+
 Un visor interactivo, del lado del cliente, para los registros de actividad de Moodle. ¡Analiza fácilmente las exportaciones de logs CSV de Moodle directamente en tu navegador sin necesidad de configuración en el servidor! 🚀
 
 [![Licencia: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -10,7 +17,7 @@ Un visor interactivo, del lado del cliente, para los registros de actividad de M
 [![Chart.js](https://img.shields.io/badge/Chart.js-FF6384?style=flat&logo=chartdotjs&logoColor=white)](https://www.chartjs.org/)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Desplegado-brightgreen)](https://soyunomas.github.io/moodle-activity-viewer/visor_actividad_moodle.html)
 
-Esta herramienta permite a educadores, administradores y usuarios de Moodle visualizar y filtrar rápidamente la actividad de los alumnos. Es completamente **autocontenida** en un único archivo HTML, lo que significa que no hay instalaciones complejas ni dependencias de servidor. ¡Simplemente ábrelo y úsalo! 🎉
+Esta herramienta permite a educadores, administradores y usuarios de Moodle visualizar y filtrar rápidamente la actividad de los alumnos. No necesita backend: la interfaz se sirve como HTML y scripts JavaScript locales, apoyados en librerías de presentación cargadas desde CDN.
 
 # Visor de Actividad Moodle Avanzado
 
@@ -65,6 +72,35 @@ Herramienta de análisis de logs de Moodle del lado del cliente, diseñada para 
         *   Define subcadenas para identificar eventos de "Visualización" (ej: "viewed", "consultado").
         *   Define subcadenas para identificar eventos de "Participación" (ej: "submitted", "posted").
 
+## Seguimiento docente: de los registros a preguntas concretas
+
+Los paneles aparecen **ordenados por utilidad durante el curso**. Los primeros permiten identificar a quién conviene preguntar cómo va; los últimos completan el contexto técnico. Los indicadores nunca equivalen a calificaciones ni prueban abandono.
+
+1. **Continuidad semanal:** una matriz por alumno y semana indica cuándo aparecen o dejan de aparecer eventos en el CSV. Pulsa en un nombre para abrir su perfil.
+2. **Evolución individual:** gráfico semanal, días activos, último evento y sesiones aproximadas. Útil para comprobar cambios tras una tutoría.
+3. **Comparación entre periodos:** compara intervalos consecutivos con el mismo número de días y con los mismos filtros. Se oculta si el CSV no cubre íntegramente el tramo anterior.
+4. **Mapa de calor por día y hora:** identifica en qué momentos se concentra el uso de Moodle; útil para planificar avisos o entender los días previos a las entregas.
+5. **Tipos de interacción:** consulta, participación y otras acciones, clasificados por patrones editables. Permite distinguir cantidad de accesos y naturaleza de las acciones registradas.
+6. **Sesiones aproximadas:** agrupa eventos por alumno con pausas de hasta 30 minutos. La duración es solo el intervalo entre eventos, no tiempo real de estudio.
+7. **Concentraciones inusuales:** muestra determinadas ráfagas horarias con al menos 25 eventos y triple de la mediana de actividad por hora. Solo sirve para revisar su contexto.
+8. **Calidad del CSV:** contabiliza registros procesados, descartes, alumnos sin nombre y columnas ausentes.
+
+Debajo aparecen **los 19 gráficos originales y el resumen general**, priorizados por análisis de alumnos, evolución temporal, interacción, contexto, componentes, dispersión, IP y cuestionarios. Los gráficos de cuestionarios solo aparecen cuando hay intentos reconocibles.
+
+### Cómo interpretar las señales
+
+- **Semanas sin registros:** revisar si hay incidencias de acceso, actividades fuera de Moodle o problemas de planificación. No deducir desinterés automáticamente.
+- **Muchas visitas y pocas entregas:** comprobar las instrucciones, la dificultad y los plazos de las actividades.
+- **Concentración de eventos en una hora:** verificar si se trata de un cuestionario, un recurso que genera varios eventos o una sesión de trabajo intensiva.
+- **Caída respecto al periodo anterior:** comparar solo periodos completos y equivalentes; tener presente el calendario académico.
+- **Filas descartadas:** revisar primero la exportación antes de interpretar una ausencia de eventos.
+
+Cada panel y gráfico incluye un **botón de ayuda** con definición, lectura, ejemplos de uso docente y límites de interpretación. Los ajustes de exclusiones y patrones siguen disponibles en la rueda de Configuración.
+
+### Recomendación para el seguimiento
+
+Exporta el CSV con un intervalo que abarque las semanas que quieres observar, preferiblemente con algo de histórico previo para permitir comparaciones. Los días sin actividad se cuentan **hasta la última fecha presente en el CSV**, no hasta hoy. Si hay alumnos que nunca han generado registros, no pueden inferirse a partir del CSV: contrasta con la lista de matriculados en Moodle.
+
 ## 📸 Capturas de Pantalla
 
 <table align="center" style="width:100%; border-collapse: collapse;">
@@ -101,7 +137,7 @@ Herramienta de análisis de logs de Moodle del lado del cliente, diseñada para 
 ## 🚀 Demo en Vivo en GitHub Pages
 
 Prueba el Visor de Actividad Moodle en vivo:
-[https://soyunomas.github.io/moodle-activity-viewer/visor_actividad_moodle.html](https://soyunomas.github.io/moodle-activity-viewer/visor_actividad_moodle.html)
+[**Abrir el visor en GitHub Pages**](https://soyunomas.github.io/moodle-activity-viewer/)
 
 ## 📋 Cómo Exportar Logs de Moodle como CSV
 
@@ -135,23 +171,21 @@ Este visor depende de encabezados de columna específicos de la exportación CSV
 *   `Nombre evento`
 *   `Descripción`
 
-Si tu exportación de Moodle usa nombres diferentes, necesitarás actualizar el objeto `CSV_COLUMN_MAPPING` dentro de la etiqueta `<script>` en el archivo `index.html`.
+Si tu exportación de Moodle usa nombres diferentes, necesitarás actualizar el objeto `CSV_COLUMN_MAPPING` dentro de `visor_actividad_moodle.html`.
 
 ## 💻 Cómo Usar el Visor
 
-1.  **Abre `visor_actividad_moodle.html`:**
-    *   Descarga el repositorio y abre `index.html` directamente en tu navegador web.
-    *   O visita la [Demo en Vivo](#-demo-en-vivo-en-github-pages).
+1.  **Abre el visor:** utiliza el enlace principal de GitHub Pages al comienzo del README. También puedes descargar el repositorio y abrir `index.html` o `visor_actividad_moodle.html`.
 2.  **Selecciona el Archivo CSV:**
-    *   Bajo "1. Selecciona el archivo CSV:", haz clic en "Seleccionar archivo" y elige el archivo de log CSV que descargaste de Moodle.
+    *   En la barra superior compacta, selecciona el CSV exportado desde Moodle.
 3.  **Aplica Filtros (Opcional):**
-    *   El acordeón "Configuración de Análisis y Filtros" está abierto por defecto.
+    *   Abre el panel lateral **Filtros** cuando necesites ajustar el periodo o el alumnado.
     *   Ajusta la **Fecha de Inicio** y **Fecha de Fin**.
     *   Usa los menús desplegables para filtrar por **Alumno**, **Nombre Evento**, **Componente** o **Contexto del Evento** específico.
 4.  **Analiza:**
-    *   Haz clic en el botón **"Analizar Logs"**.
+    *   Haz clic en **Analizar**. Los filtros actualizan el análisis después de cargar el CSV.
 5.  **Explora los Resultados:**
-    *   Visualiza las estadísticas resumidas y los gráficos interactivos en el panel.
+    *   Consulta primero el bloque **Seguimiento docente** y después los gráficos complementarios.
     *   Haz clic en cualquier tarjeta de gráfico pequeña para ver una versión ampliada en un modal.
     *   Desplázate por la tabla "Detalle de Logs Filtrados" en la parte inferior.
 6.  **Configura Exclusiones (Opcional):**
