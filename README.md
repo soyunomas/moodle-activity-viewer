@@ -78,7 +78,7 @@ Los paneles aparecen **ordenados por utilidad durante el curso**. Los primeros p
 
 1. **Continuidad semanal:** una matriz por alumno y semana indica cuándo aparecen o dejan de aparecer eventos en el CSV. Pulsa en un nombre para abrir su perfil.
 2. **Evolución individual:** gráfico semanal, días activos, último evento y sesiones aproximadas. Útil para comprobar cambios tras una tutoría.
-3. **Comparación entre periodos:** compara intervalos consecutivos con el mismo número de días y con los mismos filtros. Se oculta si el CSV no cubre íntegramente el tramo anterior.
+3. **Comparación entre periodos:** compara los dos tramos consecutivos más recientes que caben dentro de las fechas disponibles del CSV y el rango seleccionado (hasta 14 días por tramo), con los mismos filtros. No hace falta exportar un periodo anterior adicional. Si el CSV abarca un solo día, se indica por qué no puede compararse.
 4. **Mapa de calor por día y hora:** identifica en qué momentos se concentra el uso de Moodle; útil para planificar avisos o entender los días previos a las entregas.
 5. **Tipos de interacción:** consulta, participación y otras acciones, clasificados por patrones editables. Permite distinguir cantidad de accesos y naturaleza de las acciones registradas.
 6. **Sesiones aproximadas:** agrupa eventos por alumno con pausas de hasta 30 minutos. La duración es solo el intervalo entre eventos, no tiempo real de estudio.
@@ -92,14 +92,14 @@ Debajo aparecen **los 19 gráficos originales y el resumen general**, priorizado
 - **Semanas sin registros:** revisar si hay incidencias de acceso, actividades fuera de Moodle o problemas de planificación. No deducir desinterés automáticamente.
 - **Muchas visitas y pocas entregas:** comprobar las instrucciones, la dificultad y los plazos de las actividades.
 - **Concentración de eventos en una hora:** verificar si se trata de un cuestionario, un recurso que genera varios eventos o una sesión de trabajo intensiva.
-- **Caída respecto al periodo anterior:** comparar solo periodos completos y equivalentes; tener presente el calendario académico.
+- **Cambio entre tramos del CSV:** interpreta el cambio entre dos ventanas de igual duración, con sus fechas visibles; ten presente el calendario académico y que una ausencia de eventos en el archivo no demuestra ausencia de estudio.
 - **Filas descartadas:** revisar primero la exportación antes de interpretar una ausencia de eventos.
 
 Cada panel y gráfico incluye un **botón de ayuda** con definición, lectura, ejemplos de uso docente y límites de interpretación. Los ajustes de exclusiones y patrones siguen disponibles en la rueda de Configuración.
 
 ### Recomendación para el seguimiento
 
-Exporta el CSV con un intervalo que abarque las semanas que quieres observar, preferiblemente con algo de histórico previo para permitir comparaciones. Los días sin actividad se cuentan **hasta la última fecha presente en el CSV**, no hasta hoy. Si hay alumnos que nunca han generado registros, no pueden inferirse a partir del CSV: contrasta con la lista de matriculados en Moodle.
+Exporta el CSV con las semanas que quieras observar. La comparación utiliza únicamente el CSV cargado y dos tramos de igual duración (máximo 14 días cada uno); necesita que las fechas de sus registros abarquen al menos dos días. Los días sin actividad se cuentan **hasta la última fecha presente en el CSV**, no hasta hoy. Si hay alumnos que nunca han generado registros, no pueden inferirse a partir del CSV: contrasta con la lista de matriculados en Moodle.
 
 ## 📸 Capturas de Pantalla
 
