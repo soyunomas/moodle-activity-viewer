@@ -82,4 +82,9 @@ test('archivo vacío: sin divisiones por cero ni fechas inválidas',()=>{
   eq(r.comparison.available,false,'sin comparación');
   eq(r.users.length,0,'sin estudiantes');
 });
-console.log('10 pruebas correctas');
+test('no compara cuando el periodo actual termina después de la última fecha del CSV',()=>{
+  const logs=[row('Ana','2026-09-28T08:00:00'),row('Ana','2026-10-07T08:00:00')];
+  const result=Analytics.compute([logs[1]],logs,options());
+  eq(result.comparison.available,false,'periodo actual incompleto');
+});
+console.log('11 pruebas correctas');
