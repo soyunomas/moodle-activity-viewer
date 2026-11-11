@@ -59,7 +59,7 @@ test('cohorte basada en histórico: alumnos sin actividad en filtro aparecen',()
   yes(r.users.some(u=>u.name==='Ana' && u.events===0),'visibilidad sin eventos');
 });
 test('filtro de alumno, hora y componente se aplica también al periodo anterior',()=>{
-  const all=[row('Ana','2026-09-28T20:00:00'),row('Ana','2026-10-01T10:00:00'),row('Beto','2026-10-01T10:00:00'),row('Ana','2026-10-05T10:00:00')];
+  const all=[row('Ana','2026-09-28T20:00:00'),row('Ana','2026-10-01T10:00:00'),row('Beto','2026-10-01T10:00:00'),row('Ana','2026-10-05T10:00:00'),row('Beto','2026-10-11T20:00:00')];
   const r=Analytics.compute([all[3]],all,options({selection:{user:'Ana',event:'ALL_EVENTS',component:'Recurso',context:'ALL_CONTEXTS',ips:[],startTime:'09:00',endTime:'11:00'}}));
   eq(r.comparison.previousEvents,1,'previos con mismos filtros');
   eq(r.users.length,1,'solo alumna');
