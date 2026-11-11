@@ -52,7 +52,7 @@
       if(!earliest||date<earliest)earliest=date;
       if(!latest||date>latest)latest=date;
     }
-    const coverage=!!(valid&&earliest&&latest&&dayNum(earliest)<=dayNum(previousStart)&&dayNum(latest)>=dayNum(previousEnd));
+    const coverage=!!(valid&&earliest&&latest&&dayNum(earliest)<=dayNum(previousStart)&&dayNum(latest)>=dayNum(previousEnd)&&dayNum(latest)>=dayNum(end));
     const prior=coverage?comparable.filter(r=>{const d=dayNum(dateOf(r));return d>=dayNum(previousStart)&&d<=dayNum(previousEnd)}):[];
     const currentNames=new Set(current.map(nameOf)),priorNames=new Set(prior.map(nameOf));
     const percentChange=coverage&&prior.length?Math.round((current.length-prior.length)/prior.length*1000)/10:null;
@@ -73,7 +73,7 @@
       hourly.set(key,(hourly.get(key)||0)+1);
     }
     const observed=valid?(o.asOf?readDay(o.asOf):(latest||end)):null;
-    const asOf=observed&&valid?new Date(Math.min(dayNum(observed),dayNum(end))*86400000):null;
+    const asOf=observed&&valid?readDay(new Date(Math.min(dayNum(observed),dayNum(end))*86400000).toISOString().slice(0,10)):null;
     const known=new Set(comparable.map(nameOf)),users=[],profileByUser={},durations=[];
     for(const student of known){
       const events=(map.get(student)||[]).slice().sort((a,b)=>dateOf(a)-dateOf(b));
