@@ -45,7 +45,6 @@
     for(let index=1;index<ordered.length;index++){
       const next=ordered[index];
       if(next-last>30*60000){
-        const countInPrevious=ordered.slice(0,0); // no se exportan eventos; cada sesión se resume por contadores
         durations.push((last-first)/60000);
         if(count===1)singles++;
         first=next;count=1;
@@ -146,8 +145,8 @@
   function makePrompt(data,selection={}){
     const candidates=Array.isArray(data&&data.profiles)?data.profiles:[];
     const mode=selection.mode==='batch'?'batch':'single';
-    const batchIndex=Math.max(0,Math.floor(Number(selection.batchIndex)||0));
     const totalBatches=Math.max(1,Math.ceil(candidates.length/MAX_BATCH));
+    const batchIndex=Math.min(totalBatches-1,Math.max(0,Math.floor(Number(selection.batchIndex)||0)));
     let chosen=[];
     if(mode==='batch'){
       chosen=candidates.slice(batchIndex*MAX_BATCH,(batchIndex+1)*MAX_BATCH);
