@@ -57,6 +57,12 @@
       'Informa del número de filas procesadas y descartadas, registros sin usuario conocido y columnas no presentes.',
       'Si hay muchas filas descartadas, revisa el formato de fecha del CSV antes de sacar conclusiones del mapa de calor o de la continuidad.',
       'Un CSV válido no garantiza que Moodle registre todo el trabajo que realiza el alumnado.'
+    ],
+    aiReportOverview:[
+      'Informe para IA con identificadores seudónimos',
+      'Genera un texto con métricas numéricas de las gráficas: actividad semanal, continuidad, tipos de interacción, sesiones estimadas, franjas del día, contextos y componentes distintos (solo sus cantidades). Se puede copiar un alumno o un lote de diez. No envía nada automáticamente.',
+      'Ejemplo de uso docente: genera un informe de «Alumno 003» con enfoque Tutoría. La IA puede proponer preguntas sobre semanas sin eventos y cambios en la participación, sin ver nombres reales. Abre aquí las equivalencias locales cuando necesites relacionar el identificador con el alumno.',
+      'La tabla de nombres queda en la página, nunca en el prompt. El resultado está seudonimizado, no completamente anonimizado: en grupos pequeños los patrones podrían identificar a alguien. Consulta las normas del centro antes de pegarlo en una IA externa. Ninguna IA puede medir esfuerzo, motivación o aprendizaje a partir de estos registros.'
     ]
   };
   const legacyExamples={
