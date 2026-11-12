@@ -15,3 +15,4 @@ jobs:
           node tests/learning_analytics.test.js
           node tests/ui_integrity.test.js
           node tests/ai_report.test.js
+          node tests/ai_report_ui.test.js
