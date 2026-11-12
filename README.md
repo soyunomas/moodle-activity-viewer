@@ -101,6 +101,30 @@ Cada panel y gráfico incluye un **botón de ayuda** con definición, lectura, e
 
 Exporta el CSV con las semanas que quieras observar. La comparación utiliza únicamente el CSV cargado y dos tramos de igual duración (máximo 14 días cada uno); necesita que las fechas de sus registros abarquen al menos dos días. Los días sin actividad se cuentan **hasta la última fecha presente en el CSV**, no hasta hoy. Si hay alumnos que nunca han generado registros, no pueden inferirse a partir del CSV: contrasta con la lista de matriculados en Moodle.
 
+## Informes para IA con datos seudonimizados
+
+El visor permite **preparar un informe por alumno o por lotes de hasta 10** y copiarlo para analizarlo con una IA autorizada por tu centro. No requiere claves de API ni envía automáticamente los datos a ningún servicio externo.
+
+1. Carga un CSV y pulsa **Analizar**. Los informes respetan el mismo filtrado y las exclusiones del resto del panel.
+2. Baja a **Informe para IA** o pulsa **Preparar informe de este alumno para IA** desde la gráfica de evolución individual.
+3. Elige **Un alumno** o **Varios alumnos** (con lotes de diez), y el enfoque **Seguimiento**, **Tutoría** o **Evolución**.
+4. Pulsa **Generar informe para IA** y revisa el texto completo. Pulsa **Copiar el texto** y pégalo únicamente en una IA cuya utilización esté autorizada por tu centro.
+5. Para consultar la correspondencia, abre **«Ver equivalencias locales: Alumno 001 ↔ Nombre y apellidos»**. Esa tabla solo se muestra en el navegador y no forma parte del texto para copiar.
+
+### Qué datos se comparten
+
+El texto incluye seudónimos (\`Alumno 001\`, \`Alumno 002\`…), recuentos de eventos y días activos, evolución semanal numérica, tipos de interacción, franjas horarias agregadas, estimaciones de sesiones, número de componentes y contextos distintos, y comparaciones entre tramos del CSV cuando existan.
+
+**No se incorporan:** nombres y apellidos, direcciones IP, descripciones de eventos, textos del contexto, nombres de componentes, marcas de tiempo exactas, nombre del CSV ni la tabla de correspondencias. El generador trabaja con un conjunto cerrado de métricas, no con filas sin procesar. Los identificadores permanecen estables al cambiar filtros dentro de un mismo CSV (salvo que se modifique la cohorte mediante exclusiones).
+
+**Privacidad:** se trata de información **seudonimizada**, no anónima en sentido estricto. Un patrón de actividad singular puede permitir identificar a una persona, especialmente en grupos pequeños. Los registros pueden referirse a menores. Revisa las indicaciones y obligaciones de protección de datos del centro y evita copiar la tabla de equivalencias a servicios externos.
+
+### Cómo interpretar la respuesta de una IA
+
+El prompt pide que la IA analice **constancia y participación registradas**, distinga hechos de hipótesis, proponga preguntas para la tutoría y señale los límites de los datos. No le pide que califique cuánto se esfuerza un alumno, que diagnostique abandono o que atribuya capacidad, motivación o aprendizaje.
+
+Un alumno con pocos eventos puede haber trabajado fuera de Moodle; una sesión de un solo evento no equivale a cero tiempo de estudio. El informe de IA es un **borrador orientativo**: no reemplaza la observación docente, las entregas ni la conversación con el alumnado.
+
 ## 📸 Capturas de Pantalla
 
 <table align="center" style="width:100%; border-collapse: collapse;">
