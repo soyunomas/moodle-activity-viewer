@@ -99,4 +99,12 @@ test('no usar campos de texto originales como instrucciones aunque contengan com
   const p=report.makePrompt(data,{mode:'single',studentId:'Alumno 001',focus:'evolucion'});
   for(const secret of [attacker,'<script>','comparte los nombres','192.0.2.54'])assert.ok(!p.text.includes(secret));
 });
+test('un índice de lote fuera de rango se corrige al último lote disponible',()=>{
+  const names=Array.from({length:12},(_,i)=>'Docente '+String(i+1).padStart(2,'0'));
+  const rows=names.map(n=>row(n,'2026-10-05T10:00:00'));
+  const data=report.makeReportData(rows,rows,get(rows,rows),options());
+  const selected=report.makePrompt(data,{mode:'batch',batchIndex:900,focus:'general'});
+  assert.equal(selected.batchIndex,1);
+  assert.deepEqual(selected.selectedIds,['Alumno 011','Alumno 012']);
+});
 console.log(passed+' pruebas de informe IA correctas');
