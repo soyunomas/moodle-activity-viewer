@@ -14,6 +14,8 @@
     <script src="report_generator.js"></script>
     <script src="learning_analytics.js"></script>
     <script src="learning_analytics_ui.js"></script>
+    <script src="ai_report.js"></script>
+    <script src="ai_report_ui.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -404,6 +406,41 @@
             .tracking-summary-item:nth-child(3) { padding-left: 0; }
             .tracking-panel { padding: .85rem; }
         }
+
+        /* Informes IA: privacidad visible y maquetación editorial sin tarjetas repetidas. */
+        .ai-report {
+            margin: 1.5rem 0 2rem;
+            padding: 1.4rem 0 1.5rem;
+            border-top: 3px solid #1B4332;
+            border-bottom: 1px solid #C8CEC4;
+            color: #18181B;
+            scroll-margin-top: 120px;
+        }
+        .ai-report h2 { margin: .35rem 0 .65rem; font-size: clamp(1.25rem,2.6vw,1.75rem); }
+        .ai-report-copy { max-width: 900px; color: #4A524A; font-size: .86rem; }
+        .ai-report-controls { display: grid; grid-template-columns: minmax(160px,1fr) minmax(200px,1.4fr) minmax(180px,1.2fr); gap: 1rem; margin: 1rem 0; }
+        .ai-report-controls [hidden] { display: none !important; }
+        .ai-report-controls label { display: block; margin-bottom: .3rem; color: #3D4C42; font-size: .75rem; font-weight: 700; }
+        .ai-report-controls .form-select { background-color: #FAF9F6; border-color: #BAC5B9; font-size: .85rem; }
+        .ai-report-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; margin: 1rem 0; }
+        .ai-report-actions .btn { border-radius: .25rem; font-size: .83rem; }
+        .ai-report-preview { width: 100%; min-height: 210px; background: #FAF9F6; border: 1px solid #BBC5B9; border-radius: .3rem; padding: .85rem; font-size: .76rem; line-height: 1.55; font-family: ui-monospace, Menlo, Consolas, monospace; color: #18181B; }
+        .ai-report-preview:focus { outline: 2px solid #1B4332; outline-offset: 1px; }
+        .ai-report-meta { font-size: .74rem; color: #5B625A; }
+        .ai-report-status { color: #1B4332; font-size: .8rem; min-height: 1.3em; font-weight: 600; }
+        .ai-report-map { margin-top: 1.1rem; border-top: 1px solid #CDD1C8; padding-top: .8rem; }
+        .ai-report-map summary { cursor: pointer; color: #1B4332; font-size: .85rem; font-weight: 700; }
+        .ai-report-map summary:focus-visible { outline: 2px solid #1B4332; outline-offset: 2px; }
+        .ai-report-table-wrap { max-height: 250px; overflow: auto; margin: .65rem 0; border: 1px solid #D5D9D0; }
+        .ai-report-table { width: 100%; border-collapse: collapse; background: #FAF9F6; font-size: .79rem; }
+        .ai-report-table th, .ai-report-table td { padding: .4rem .75rem; border-bottom: 1px solid #E2E5DE; text-align: left; }
+        .ai-report-table th { font-weight: 700; color: #1B4332; }
+        .ai-report-link { font-size: .8rem; font-weight: 700; color: #1B4332; text-underline-offset: 3px; }
+        @media (max-width: 767.98px) {
+          .ai-report-controls { grid-template-columns: 1fr; gap: .65rem; }
+          .ai-report { padding-top: 1rem; }
+        }
+
     </style>
 </head>
 <body>
@@ -552,6 +589,7 @@
                         <h1 class="tracking-heading">Continuidad, cambios y contexto</h1>
                         <p class="tracking-caption">Los registros ayudan a detectar cambios en el uso de Moodle. No son una medida de aprendizaje ni prueban falta de interés. Todas las fechas se interpretan respecto al CSV.</p>
                         <p id="trackingAsOf" class="tracking-note" aria-live="polite"></p>
+                        <a class="ai-report-link" href="#aiReportPanel">Preparar informe para IA (datos seudonimizados)</a>
                     </div>
                     <div class="tracking-summary">
                         <div class="tracking-summary-item"><strong id="trackingKpiStudents">—</strong><span>Alumnos detectados en el CSV filtrable</span></div>
@@ -560,9 +598,65 @@
                         <div class="tracking-summary-item"><strong id="trackingKpiSessions">—</strong><span>Sesiones estimadas</span></div>
                     </div>
                     <div class="row g-3">
-                        <div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>01 · Continuidad semanal</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingContinuity" aria-label="Ayuda: trackingContinuity" title="Qué muestra y cómo interpretarlo">?</button></div><p>Pulsa en el nombre para consultar su evolución. Se muestran las últimas 12 semanas del intervalo.</p><div class="tracking-table-wrap"><table class="tracking-table" id="trackingContinuityTable" aria-label="Continuidad semanal por alumno"></table></div><p class="tracking-note">Los días sin eventos se calculan hasta el último día observado en el CSV, limitado por el filtro de fechas.</p></article></div><div class="col-xl-5" id="trackingProfile"><article class="tracking-panel"><div class="tracking-panel-head"><h3>02 · Evolución individual</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingProgress" aria-label="Ayuda: trackingProgress" title="Qué muestra y cómo interpretarlo">?</button></div><p>Cómo cambia la actividad semanal de un alumno durante el curso.</p><label class="form-label" for="trackingStudentSelect">Alumno/a</label><select id="trackingStudentSelect" class="form-select form-select-sm tracking-profile-select"></select><p class="tracking-note" id="trackingStudentMeta"></p><div class="tracking-chart-wrap"><canvas id="trackingProgressCanvas" role="img" aria-label="Eventos semanales del alumno seleccionado"></canvas></div></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>03 · Comparación dentro del CSV</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingComparison" aria-label="Ayuda: trackingComparison" title="Qué muestra y cómo interpretarlo">?</button></div><p>Mismos filtros. Dos tramos recientes de igual duración dentro del CSV (hasta 14 días por tramo).</p><div id="trackingComparison" class="tracking-comparison"></div></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>04 · Mapa de calor · Día y hora</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingHeatmap" aria-label="Ayuda: trackingHeatmap" title="Qué muestra y cómo interpretarlo">?</button></div><p>Cuándo se producen más eventos en el conjunto filtrado.</p><div id="trackingHeatmap" class="tracking-heat-scroll"></div></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>05 · Tipos de interacción</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingActivityMix" aria-label="Ayuda: trackingActivityMix" title="Qué muestra y cómo interpretarlo">?</button></div><p>Consulta, participación y otras acciones según patrones configurables.</p><div id="trackingComposition"></div><p class="tracking-note">Clasificación aproximada por nombre de evento; ajusta patrones desde Configuración.</p></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>06 · Sesiones aproximadas</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingSessions" aria-label="Ayuda: trackingSessions" title="Qué muestra y cómo interpretarlo">?</button></div><p>Una pausa superior a 30 minutos inicia una sesión nueva.</p><p id="trackingSessions"></p><p class="tracking-note">La duración solo mide el intervalo entre eventos.</p></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>07 · Concentraciones para revisar</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingAnomalies" aria-label="Ayuda: trackingAnomalies" title="Qué muestra y cómo interpretarlo">?</button></div><p>Señales descriptivas de actividad especialmente concentrada por hora; no son acusaciones.</p><div id="trackingAnomalies"></div></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>08 · Calidad del CSV</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingQuality" aria-label="Ayuda: trackingQuality" title="Qué muestra y cómo interpretarlo">?</button></div><p>Comprueba si la exportación permite interpretar los datos.</p><p id="trackingQuality"></p></article></div></div>
+                        <div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>01 · Continuidad semanal</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingContinuity" aria-label="Ayuda: trackingContinuity" title="Qué muestra y cómo interpretarlo">?</button></div><p>Pulsa en el nombre para consultar su evolución. Se muestran las últimas 12 semanas del intervalo.</p><div class="tracking-table-wrap"><table class="tracking-table" id="trackingContinuityTable" aria-label="Continuidad semanal por alumno"></table></div><p class="tracking-note">Los días sin eventos se calculan hasta el último día observado en el CSV, limitado por el filtro de fechas.</p></article></div><div class="col-xl-5" id="trackingProfile"><article class="tracking-panel"><div class="tracking-panel-head"><h3>02 · Evolución individual</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingProgress" aria-label="Ayuda: trackingProgress" title="Qué muestra y cómo interpretarlo">?</button></div><p>Cómo cambia la actividad semanal de un alumno durante el curso.</p><label class="form-label" for="trackingStudentSelect">Alumno/a</label><select id="trackingStudentSelect" class="form-select form-select-sm tracking-profile-select"></select><p class="tracking-note" id="trackingStudentMeta"></p><div class="tracking-chart-wrap"><canvas id="trackingProgressCanvas" role="img" aria-label="Eventos semanales del alumno seleccionado"></canvas></div><button type="button" class="btn btn-sm btn-outline-success mt-2" id="aiReportFromProfile">Preparar informe de este alumno para IA</button></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>03 · Comparación dentro del CSV</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingComparison" aria-label="Ayuda: trackingComparison" title="Qué muestra y cómo interpretarlo">?</button></div><p>Mismos filtros. Dos tramos recientes de igual duración dentro del CSV (hasta 14 días por tramo).</p><div id="trackingComparison" class="tracking-comparison"></div></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>04 · Mapa de calor · Día y hora</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingHeatmap" aria-label="Ayuda: trackingHeatmap" title="Qué muestra y cómo interpretarlo">?</button></div><p>Cuándo se producen más eventos en el conjunto filtrado.</p><div id="trackingHeatmap" class="tracking-heat-scroll"></div></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>05 · Tipos de interacción</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingActivityMix" aria-label="Ayuda: trackingActivityMix" title="Qué muestra y cómo interpretarlo">?</button></div><p>Consulta, participación y otras acciones según patrones configurables.</p><div id="trackingComposition"></div><p class="tracking-note">Clasificación aproximada por nombre de evento; ajusta patrones desde Configuración.</p></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>06 · Sesiones aproximadas</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingSessions" aria-label="Ayuda: trackingSessions" title="Qué muestra y cómo interpretarlo">?</button></div><p>Una pausa superior a 30 minutos inicia una sesión nueva.</p><p id="trackingSessions"></p><p class="tracking-note">La duración solo mide el intervalo entre eventos.</p></article></div><div class="col-xl-7"><article class="tracking-panel"><div class="tracking-panel-head"><h3>07 · Concentraciones para revisar</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingAnomalies" aria-label="Ayuda: trackingAnomalies" title="Qué muestra y cómo interpretarlo">?</button></div><p>Señales descriptivas de actividad especialmente concentrada por hora; no son acusaciones.</p><div id="trackingAnomalies"></div></article></div><div class="col-xl-5"><article class="tracking-panel"><div class="tracking-panel-head"><h3>08 · Calidad del CSV</h3><button type="button" class="btn btn-sm help-button" data-chart-help-type="trackingQuality" aria-label="Ayuda: trackingQuality" title="Qué muestra y cómo interpretarlo">?</button></div><p>Comprueba si la exportación permite interpretar los datos.</p><p id="trackingQuality"></p></article></div></div>
                 </section>
- 
+
+                <section id="aiReportPanel" class="ai-report" aria-labelledby="aiReportTitle">
+                  <div class="tracking-eyebrow">Informe para una IA · Copiar y pegar</div>
+                  <div class="tracking-panel-head">
+                    <h2 id="aiReportTitle">Un análisis por alumno, sin compartir su identidad</h2>
+                    <button type="button" class="btn btn-sm help-button" data-chart-help-type="aiReportOverview" title="Qué datos salen del visor y cómo usar el informe" aria-label="Ayuda sobre los informes para IA">?</button>
+                  </div>
+                  <p class="ai-report-copy">Prepara un prompt con los datos numéricos y las tendencias de Moodle. Selecciona un alumno o un lote de hasta 10. La IA recibirá «Alumno 001», «Alumno 002»… pero nunca los nombres reales, IP, contextos ni descripciones originales.</p>
+                  <p class="ai-report-copy"><strong>Atención:</strong> los identificadores son <strong>seudónimos, no anonimato garantizado</strong>. Las combinaciones de actividad pueden resultar identificables. Revisa la política de protección de datos de tu centro antes de pegarlo en un servicio externo. Ningún dato se envía automáticamente.</p>
+                  <p class="ai-report-copy"><strong>Antes de generar:</strong> el CSV también puede contener profesorado, administradores o cuentas técnicas. Exclúyelos desde Configuración; los registros no incluyen una lista verificada de alumnos matriculados.</p>
+                  <p id="aiReportAvailable" class="ai-report-meta" aria-live="polite">Carga un CSV para preparar informes.</p>
+                  <div class="ai-report-controls">
+                    <div>
+                      <label for="aiReportMode">Tipo de informe</label>
+                      <select class="form-select form-select-sm" id="aiReportMode">
+                        <option value="single">Un alumno</option>
+                        <option value="batch">Varios alumnos (lotes de 10)</option>
+                      </select>
+                    </div>
+                    <div id="aiReportSingleControls">
+                      <label for="aiReportStudent">Identificador del alumno</label>
+                      <select class="form-select form-select-sm" id="aiReportStudent" aria-describedby="aiReportMappingCount"></select>
+                    </div>
+                    <div id="aiReportBatchControls" hidden>
+                      <label for="aiReportBatch">Lote</label>
+                      <select class="form-select form-select-sm" id="aiReportBatch"></select>
+                    </div>
+                    <div>
+                      <label for="aiReportFocus">Enfoque del prompt</label>
+                      <select class="form-select form-select-sm" id="aiReportFocus">
+                        <option value="general">Seguimiento de la actividad</option>
+                        <option value="tutoria">Preparar una tutoría</option>
+                        <option value="evolucion">Evolución y cambios</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="ai-report-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="aiReportGenerate" disabled>Generar informe para IA</button>
+                    <button type="button" class="btn btn-outline-dark btn-sm" id="aiReportCopy" disabled>Copiar el texto</button>
+                    <span class="ai-report-meta" id="aiReportCharacters"></span>
+                  </div>
+                  <label for="aiReportPreview" class="form-label fw-semibold small">Texto preparado para copiar</label>
+                  <textarea id="aiReportPreview" class="ai-report-preview" rows="12" readonly spellcheck="false" aria-describedby="aiReportMessage" placeholder="Al analizar un CSV podrás generar aquí un texto sin nombres reales para copiar a una IA autorizada."></textarea>
+                  <p class="ai-report-status" id="aiReportMessage" role="status" aria-live="polite"></p>
+                  <details class="ai-report-map" id="aiReportMappingDetails">
+                    <summary>Ver equivalencias locales: Alumno 001 ↔ Nombre y apellidos</summary>
+                    <p class="tracking-note">Esta tabla se mantiene únicamente en la página mientras trabajas con el CSV. No se incluye en el texto generado y no se guarda automáticamente. No la compartas con la IA.</p>
+                    <p class="ai-report-meta" id="aiReportMappingCount"></p>
+                    <div class="ai-report-table-wrap">
+                      <table class="ai-report-table">
+                        <thead><tr><th scope="col">Seudónimo</th><th scope="col">Nombre real (solo aquí)</th></tr></thead>
+                        <tbody id="aiReportMappingTable"></tbody>
+                      </table>
+                    </div>
+                  </details>
+                </section>
+
                 <div class="row mb-3 g-3">
                     <div class="col-xl-3 col-md-6">
                         <div class="card h-100">
@@ -1208,7 +1302,8 @@
             loadSettings();
             updateFilterSummary();
             document.getElementById('filtersPanel').addEventListener('change', updateFilterSummary);
-            MoodleTrackingUI.init(); 
+            MoodleTrackingUI.init();
+            MoodleAiReportUI.init(); 
             
             analyzeButton.addEventListener('click', handleAnalysisRequest);
             csvFileInput.addEventListener('change', handleFileSelectionChange);
@@ -1354,6 +1449,7 @@
         
         function handleFileSelectionChange(event) {
             const file = event.target.files[0];
+            MoodleAiReportUI.reset();
             if (file) {
                 statusMessage.textContent = `Archivo seleccionado: ${file.name}. Listo para analizar.`;
                 statusMessage.className = 'mt-3 pt-2 border-top text-info';
@@ -2664,6 +2760,17 @@
                 }
             );
             MoodleTrackingUI.render(calculated);
+            MoodleAiReportUI.update(
+                filteredDataForCharts,
+                globallyProcessedDataForBaseLists,
+                calculated,
+                {
+                    start:startDateInput.value,
+                    end:endDateInput.value,
+                    viewPatterns:VIEW_EVENT_PATTERNS,
+                    participationPatterns:PARTICIPATION_EVENT_PATTERNS
+                }
+            );
         }
 
         function renderAllDashboardCharts() {
