@@ -117,7 +117,7 @@ El texto incluye seudónimos (\`Alumno 001\`, \`Alumno 002\`…), recuentos de e
 
 **No se incorporan:** nombres y apellidos, direcciones IP, descripciones de eventos, textos del contexto, nombres de componentes, marcas de tiempo exactas, nombre del CSV ni la tabla de correspondencias. El generador trabaja con un conjunto cerrado de métricas, no con filas sin procesar. Los identificadores permanecen estables al cambiar filtros dentro de un mismo CSV (salvo que se modifique la cohorte mediante exclusiones).
 
-**Privacidad:** se trata de información **seudonimizada**, no anónima en sentido estricto. Un patrón de actividad singular puede permitir identificar a una persona, especialmente en grupos pequeños. Los registros pueden referirse a menores. Revisa las indicaciones y obligaciones de protección de datos del centro y evita copiar la tabla de equivalencias a servicios externos.
+**Privacidad:** se trata de información **seudonimizada**, no anónima en sentido estricto. Un patrón de actividad singular puede permitir identificar a una persona, especialmente en grupos pequeños. Los registros pueden referirse a menores. Revisa las indicaciones y obligaciones de protección de datos del centro y evita copiar la tabla de equivalencias a servicios externos. Además, los registros pueden incluir profesorado, administradores o cuentas de prueba: exclúyelos desde Configuración, pues el visor no conoce la matrícula oficial.
 
 ### Cómo interpretar la respuesta de una IA
 
